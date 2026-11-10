@@ -1,0 +1,11 @@
+# Secrets: the Archil key lives here, never in git
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store

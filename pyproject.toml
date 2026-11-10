@@ -1,0 +1,9 @@
+[project]
+name = "archil-hackathon"
+version = "0.1.0"
+description = "Marco's build for the Archil hackathon"
+requires-python = ">=3.12"
+dependencies = [
+    "archil>=0.21.0",
+    "python-dotenv>=1.2.4",
+]
