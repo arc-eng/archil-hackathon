@@ -41,3 +41,44 @@ Also in the SDK: agent tools that turn a disk into a filesystem toolset for Open
 
 `main.py` only reads (lists disks and sandboxes), so it creates nothing and costs nothing. Clean up what you create with
 `disk.delete()`, `sandbox.stop()` and `sandbox.delete()`.
+
+## The agent: Pydantic AI over Archil
+
+`agent.py` is a Pydantic AI agent with Archil as plain tools (`archil_tools.py`), so no LangChain. Archil only ships
+OpenAI Agents and LangChain adapters.
+
+```bash
+uv run agent.py "Create a python:3.12 sandbox, pip install packaging 23.2, then fork it to try packaging 24.2 and 25.0 \
+  and tell me which import and print their version"
+uv run agent.py --keep "..."   # leave the sandboxes up to look around (Archil still stops them after 30 min)
+```
+
+**Model:** `ARCHIL_AGENT_MODEL` in `.env`, any Pydantic AI model string, default `anthropic:claude-sonnet-5-5`, plus
+that provider's key (`ANTHROPIC_API_KEY=` or `OPENAI_API_KEY=` with e.g. `openai:gpt-5.2`). `.env` is git-ignored.
+
+**Tools** (only on sandboxes this run created; at most 6 per run; all deleted at the end unless `--keep`):
+
+| Tool | Does |
+|---|---|
+| `create_sandbox(name, base_image?)` | a new microVM, default `python:3.12-slim`, stopped by Archil after 30 min even if we crash |
+| `run(sandbox_id, command, cwd?, timeout_seconds?)` | a shell command; exit code, seconds, the last 4,000 chars of stdout/stderr |
+| `fork(sandbox_id, name)` | a copy of the whole warm state in a new sandbox |
+| `fork_and_run(sandbox_id, jobs, timeout_seconds?)` | **the fan-out:** a fork per job, each job's command in its own fork, at most 5 at once, one result per job (one bad fork doesn't sink the rest) |
+| `write_file` / `read_file` | text files in a sandbox |
+| `list_sandboxes` / `delete_sandbox` | this run's sandboxes; forks are deleted before their base |
+
+**Tonight's upgrade sweep** fits it directly: `create_sandbox` → `run` the setup once (Postgres, Poetry install, a test
+run to time it) → `fork_and_run` with one job per capped package (`sed` the cap in `pyproject.toml` → `poetry lock` →
+tests) → a table of pass/fail per upgrade. Or skip the model and call the tools from a script, as `smoke_live.py` does.
+
+**Archil's rules, learned on the first live run:** a running sandbox must be stopped before it's deleted, and forks go
+before the sandbox they came from. The tools do both.
+
+### Checks
+
+```bash
+uv run pytest -q          # the tools against a fake Archil: no network, no sandbox time
+uv run smoke_live.py      # real Archil, scripted model (no LLM key): ~3 sandboxes for ~15 s, then checks none are left
+```
+
+Free plan: 1 sandbox-hour a month, 30-minute sessions. `smoke_live.py` uses about a minute of it.
