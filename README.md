@@ -54,7 +54,7 @@ uv run agent.py --keep "..."   # leave the sandboxes up to look around (Archil s
 ```
 
 **Model:** `ARCHIL_AGENT_MODEL` in `.env`, any Pydantic AI model string, default `anthropic:claude-sonnet-5-5`, plus
-that provider's key (`ANTHROPIC_API_KEY=` or `OPENAI_API_KEY=` with e.g. `openai:gpt-5.2`). `.env` is git-ignored.
+that provider's key (`ANTHROPIC_API_KEY=` or `OPENAI_API_KEY=` with `openai:<model>`). `.env` is git-ignored.
 
 **Tools** (only on sandboxes this run created; at most 6 per run; all deleted at the end unless `--keep`):
 
