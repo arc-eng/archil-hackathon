@@ -97,22 +97,33 @@ uv run smoke_claude.py    # real Archil + Claude Code with the token: login, hea
 
 Free plan: 1 sandbox-hour a month, 30-minute sessions. `smoke_live.py` uses about a minute of it.
 
-## The golden-sandbox connector (tonight, arc-eng/hq#781)
+## The golden-sandbox demo (tonight, arc-eng/hq#781)
 
-`connector.py` is the MCP server Marco adds to his Claude app. It listens on `$PORT` (default 8080) and serves:
+Someone types "build me an app that does X" in their Claude app. Claude interviews them as a product owner and
+calls `request_app` with a full spec. Their own Archil sandbox (copied once from the **golden sandbox**, reused after)
+builds it under the house rules. The company's builder deploys it to its own Cloud Run app, and the link lands in
+the registry.
 
-- `GET /health` → `{"ok": true}`
-- MCP (Streamable HTTP, stateless) at `/mcp/<CONNECTOR_PATH_SECRET>`, with three tools: `request_app(what, who)`,
-  `my_apps(who)`, `stop_app(name)`. Until tonight's build they answer "not built yet" and touch nothing.
+| File | Does |
+|---|---|
+| `connector.py` | MCP server: `request_app`, `my_apps`, `stop_app`; `/status/<id>` and `/admin/<key>` pages and their JSON |
+| `service.py` | spec checks (vague parts refused with what's missing), the outside-data rule, background build → deploy (2 builds at once, 1 deploy) |
+| `builder.py` | golden sandbox setup, one sandbox per employee, Claude Code build, our own check, pack, stop |
+| `golden/` | what goes into the golden sandbox: house rules (`CLAUDE.md`), app template, `bin/check.sh` |
+| `registry.py` | every request, on the `golden-registry` Archil disk |
+| `deploy.py` | Cloud Build as `golden-builder` into `app-01`…`app-10` (devops' recipe); `clear()` puts `empty_app/` on a slot |
+
+```bash
+uv run builder.py golden [--fresh]        # create the golden sandbox, or re-upload its files in place
+uv run builder.py build "<who>" <app> spec.md   # one build by hand, no deploy
+uv run connector.py --admin-path          # the admin page's path (keep it private)
+```
 
 | Env | What |
 |---|---|
-| `CONNECTOR_PATH_SECRET` | the secret part of the address, 32+ letters, digits, `-` or `_`. Required: without it the server won't start. The service has no sign-in in front, so this is the guard. Never post it on GitHub. |
-| `ARCHIL_API_KEY`, `ARCHIL_REGION` | Archil (the SDK reads them from the environment) |
+| `CONNECTOR_PATH_SECRET` | the secret part of the address, 32+ letters, digits, `-` or `_`. Required. Never post it on GitHub. The admin path derives from it. |
+| `ARCHIL_API_KEY`, `ARCHIL_REGION` | Archil |
 | `CLAUDE_CODE_OAUTH_TOKEN` | Marco's Claude Code token, passed into sandbox commands' env, never written to disk |
+| `PUBLIC_URL` | optional, for status links; default the Cloud Run address |
 
-```bash
-CONNECTOR_PATH_SECRET=$(openssl rand -hex 24) uv run connector.py   # local
-```
-
-The `Dockerfile` runs the same thing on Cloud Run.
+Archil limit on this plan: 30-minute sessions. Each build starts the employee's sandbox and stops it after.
