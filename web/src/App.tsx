@@ -76,7 +76,7 @@ const JUMP_WORDS: Record<string, string> = {
   Sandboxes: "Each person's own Archil sandbox, where their apps are built.",
 };
 
-function PublishGolden({ adminKey, latest, pending }: { adminKey: string; latest: number; pending: string[] }) {
+function PublishGolden({ adminKey, latest, pending, compact }: { adminKey: string; latest: number; pending: string[]; compact?: boolean }) {
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
   const [msg, setMsg] = useState("");
   const next = latest + 1;
@@ -95,13 +95,17 @@ function PublishGolden({ adminKey, latest, pending }: { adminKey: string; latest
     }
   };
   return (
-    <div className="flex flex-col items-end gap-1">
-      <div className="flex items-center gap-3">
+    <div className={`flex flex-col gap-1 ${compact ? "items-stretch" : "items-end"}`}>
+      <div className={`flex items-center gap-3 ${compact ? "flex-wrap" : ""}`}>
         <Badge variant="secondary" className="h-6 px-2.5 text-sm">Golden v{latest}</Badge>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button className="bg-[#007A33] text-base text-white hover:bg-[#007A33]/90" disabled={state === "busy" || pending.length === 0}>
-              {state === "busy" ? "Publishing…" : "Publish new golden version"}
+            <Button
+              size={compact ? "sm" : "default"}
+              className={`bg-[#007A33] text-white hover:bg-[#007A33]/90 ${compact ? "text-sm" : "text-base"}`}
+              disabled={state === "busy" || pending.length === 0}
+            >
+              {state === "busy" ? "Publishing…" : compact ? "Publish new version" : "Publish new golden version"}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
@@ -120,7 +124,7 @@ function PublishGolden({ adminKey, latest, pending }: { adminKey: string; latest
           </AlertDialogContent>
         </AlertDialog>
       </div>
-      <span className={state === "error" ? "text-[#B42318]" : "text-[#4B5057]"}>
+      <span className={`${state === "error" ? "text-[#B42318]" : "text-[#4B5057]"} ${compact ? "text-sm" : ""}`}>
         {msg || (pending.length ? `Waiting to publish: ${pending.join(", ")}` : "Nothing waiting to publish")}
       </span>
     </div>
@@ -175,6 +179,85 @@ function SignedIn() {
       {sam.role && <span className="text-sm text-[#4B5057]">{sam.role}</span>}
     </span>
   );
+}
+
+// Marco's classic SaaS frame (hq#782, 8:24 pm): navbar on top (name + Sam), sidebar with Quick access then Builders
+function Shell({ adminKey, data, who, children }: { adminKey: string; data: Admin | null; who: string; children: React.ReactNode }) {
+  const personas = usePersonas();
+  const counts = new Map<string, { name: string; n: number }>();
+  for (const p of Object.values(personas)) if (!p.admin) counts.set(p.name.trim().toLowerCase(), { name: p.name, n: 0 });
+  for (const a of latestApps(data)) {
+    const k = a.who.trim().toLowerCase();
+    const c = counts.get(k) ?? { name: a.who, n: 0 };
+    counts.set(k, { ...c, n: c.n + 1 });
+  }
+  const builders = [...counts.values()].sort((x, y) => y.n - x.n || x.name.localeCompare(y.name));
+  const base = `/admin/${adminKey}`;
+  return (
+    <div className="flex min-h-screen flex-col bg-white text-base text-[#15171A]">
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-[#E3E5E8] px-6">
+        <a href={base} className="text-xl font-semibold">Golden Sandbox</a>
+        <SignedIn />
+      </header>
+      <div className="flex flex-1">
+        <aside className="flex w-72 shrink-0 flex-col gap-8 border-r border-[#E3E5E8] bg-[#F7F8F9] px-4 py-6">
+          <nav>
+            <h2 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-[#4B5057]">Quick access</h2>
+            <ul className="flex flex-col gap-0.5">
+              {(data?.links ?? []).map((l) => (
+                <li key={l.label}>
+                  <a href={l.url} target="_blank" rel="noreferrer" title={JUMP_WORDS[l.label]} className="group flex items-center gap-3 rounded-md px-2 py-2 hover:bg-[#ECEEF0]">
+                    {JUMP_ICONS[l.label] && <img src={JUMP_ICONS[l.label]} alt="" className="size-5 shrink-0" />}
+                    <span className="flex-1 truncate">{l.label}</span>
+                    <ExternalLink className="size-4 shrink-0 text-[#9AA0A6] group-hover:text-[#4B5057]" />
+                  </a>
+                  {l.label === "Golden image" && data?.golden != null && (
+                    <div className="mt-1 mb-2 pl-10 pr-2">
+                      <PublishGolden adminKey={adminKey} latest={data.golden} pending={data.golden_pending ?? []} compact />
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <nav>
+            <h2 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-[#4B5057]">Builders</h2>
+            <ul className="flex flex-col gap-0.5">
+              {builders.map((b) => {
+                const on = who.trim().toLowerCase() === b.name.trim().toLowerCase();
+                return (
+                  <li key={b.name}>
+                    <a
+                      href={on ? base : `${base}?who=${encodeURIComponent(b.name)}`}
+                      className={`flex items-center justify-between gap-2 rounded-md px-2 py-1.5 ${on ? "bg-[#E3E5E8] font-medium" : "hover:bg-[#ECEEF0]"}`}
+                    >
+                      <Owner who={b.name} />
+                      <span className="text-sm tabular-nums text-[#4B5057]">{b.n}</span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        </aside>
+        <main className="min-w-0 flex-1 px-10 py-8">{children}</main>
+      </div>
+    </div>
+  );
+}
+
+// one row per app: its latest version; replaced versions are under History on its details page (po, hq#781)
+function latestApps(data: Admin | null): App[] {
+  const latest = new Map<string, App>();
+  for (const a of (data?.people ?? []).flatMap((p) => p.apps)) {
+    if (a.status === "refused") continue;
+    const k = `${a.who.trim().toLowerCase()}\u0000${a.app}`;
+    const cur = latest.get(k);
+    // the live version wins (its link keeps working while a change builds); otherwise the newest
+    const better = !cur || (a.status === "live") !== (cur.status === "live") ? !cur || a.status === "live" : a.created > cur.created;
+    if (better) latest.set(k, a);
+  }
+  return [...latest.values()].sort((x, y) => y.updated - x.updated);
 }
 
 const POLL_MS = 5000;
@@ -248,87 +331,59 @@ function OpenLink({ url }: { url: string }) {
 
 function AdminView({ adminKey }: { adminKey: string }) {
   const [data, err] = usePoll<Admin>(`/api/admin/${adminKey}`);
-  // one row per app: its latest version; replaced versions are under History on its details page (po, hq#781)
-  const latest = new Map<string, App>();
-  for (const a of (data?.people ?? []).flatMap((p) => p.apps)) {
-    if (a.status === "refused") continue;
-    const k = `${a.who.trim().toLowerCase()}\u0000${a.app}`;
-    const cur = latest.get(k);
-    // the live version wins (its link keeps working while a change builds); otherwise the newest
-    const better = !cur || (a.status === "live") !== (cur.status === "live") ? !cur || a.status === "live" : a.created > cur.created;
-    if (better) latest.set(k, a);
-  }
-  const apps = [...latest.values()].sort((x, y) => y.updated - x.updated);
+  const who = new URLSearchParams(window.location.search).get("who") ?? "";
+  const apps = latestApps(data).filter((a) => !who || a.who.trim().toLowerCase() === who.trim().toLowerCase());
   const open = (a: App) => {
     window.location.href = `/admin/${adminKey}/app/${a.id}`;
   };
-  // Marco's simple layout (hq#782, 7:52 pm): title, the table, then quick access with the publish controls
   return (
-    <div className="min-h-screen bg-white text-[#15171A] text-base">
-      <div className="mx-auto max-w-7xl px-10 py-10">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <div className="flex items-baseline gap-4">
-            <h1 className="text-3xl font-semibold">Apps</h1>
-            <span className="text-[#4B5057]">{err ? `⚠ ${err}` : "Updates every 5 s"}</span>
-          </div>
-          <SignedIn />
-        </div>
-        {!data ? (
-          <p className="text-[#4B5057]">{err || "Loading…"}</p>
-        ) : (
-          <>
-            <Table className="text-base">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>App</TableHead>
-                  <TableHead>Owner</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Updated</TableHead>
-                  <TableHead>Link</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {apps.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="py-6 text-[#4B5057]">No apps yet.</TableCell>
-                  </TableRow>
-                )}
-                {apps.map((a) => (
-                  <TableRow key={a.id} onClick={() => open(a)} className="cursor-pointer">
-                    <TableCell className="max-w-[420px] whitespace-normal">
-                      <div className="font-medium">{a.title}</div>
-                      {a.status === "failed" && a.reason && <div className="text-[#4B5057] [overflow-wrap:anywhere]">{a.reason}</div>}
-                    </TableCell>
-                    <TableCell><Owner who={a.who} /></TableCell>
-                    <TableCell><StatusBadge status={a.status} /></TableCell>
-                    <TableCell className="text-[#4B5057]">{ago(a.updated)}</TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      {a.status === "live" && a.url ? <OpenLink url={a.url} /> : null}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <section className="mt-12">
-              <h2 className="mb-2 text-xl font-semibold">Quick access</h2>
-              <ul className="divide-y divide-[#E3E5E8] border-y border-[#E3E5E8]">
-                {(data.links ?? []).map((l) => (
-                  <li key={l.label} className="flex items-center gap-6 py-4">
-                    <div className="w-56 shrink-0">
-                      <JumpButton link={l} full />
-                    </div>
-                    <span className="flex-1 text-[#4B5057]">{JUMP_WORDS[l.label] ?? ""}</span>
-                    {l.label === "Golden image" && data.golden != null && (
-                      <PublishGolden adminKey={adminKey} latest={data.golden} pending={data.golden_pending ?? []} />
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          </>
+    <Shell adminKey={adminKey} data={data} who={who}>
+      <div className="mb-6 flex flex-wrap items-baseline gap-4">
+        <h1 className="text-3xl font-semibold">Apps</h1>
+        {who && (
+          <a href={`/admin/${adminKey}`} className="rounded-full bg-[#E3E5E8] px-3 py-0.5 text-sm">
+            {who} ✕
+          </a>
         )}
+        <span className="text-[#4B5057]">{err ? `⚠ ${err}` : "Updates every 5 s"}</span>
       </div>
-    </div>
+      {!data ? (
+        <p className="text-[#4B5057]">{err || "Loading…"}</p>
+      ) : (
+        <Table className="text-base">
+          <TableHeader>
+            <TableRow>
+              <TableHead>App</TableHead>
+              <TableHead>Owner</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Updated</TableHead>
+              <TableHead>Link</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {apps.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="py-6 text-[#4B5057]">{who ? `No apps from ${who} yet.` : "No apps yet."}</TableCell>
+              </TableRow>
+            )}
+            {apps.map((a) => (
+              <TableRow key={a.id} onClick={() => open(a)} className="cursor-pointer">
+                <TableCell className="max-w-[420px] whitespace-normal">
+                  <div className="font-medium">{a.title}</div>
+                  {a.status === "failed" && a.reason && <div className="text-[#4B5057] [overflow-wrap:anywhere]">{a.reason}</div>}
+                </TableCell>
+                <TableCell><Owner who={a.who} /></TableCell>
+                <TableCell><StatusBadge status={a.status} /></TableCell>
+                <TableCell className="text-[#4B5057]">{ago(a.updated)}</TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  {a.status === "live" && a.url ? <OpenLink url={a.url} /> : null}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </Shell>
   );
 }
 
@@ -369,6 +424,7 @@ function Outcome({ v }: { v: App }) {
 
 function DetailView({ adminKey, id }: { adminKey: string; id: string }) {
   const [a, err] = usePoll<Full>(`/api/admin/${adminKey}/app/${id}`);
+  const [admin] = usePoll<Admin>(`/api/admin/${adminKey}`); // the shell's sidebar
   const [stopErr, setStopErr] = useState("");
   const stop = async () => {
     setStopErr("");
@@ -377,9 +433,9 @@ function DetailView({ adminKey, id }: { adminKey: string; id: string }) {
   };
   const history = [...(a?.versions ?? [])].sort((x, y) => y.created - x.created);
   return (
-    <div className="min-h-screen bg-white text-[#15171A] text-base">
-      <div className="mx-auto max-w-7xl px-10 py-10">
-        <div className="flex items-center justify-between gap-4">
+    <Shell adminKey={adminKey} data={admin} who="">
+      <div>
+        <div>
           <Breadcrumb>
             <BreadcrumbList className="text-base">
               <BreadcrumbItem>
@@ -391,7 +447,6 @@ function DetailView({ adminKey, id }: { adminKey: string; id: string }) {
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          <SignedIn />
         </div>
         {!a ? (
           <p className="mt-6 text-[#4B5057]">{err || "Loading…"}</p>
@@ -504,7 +559,7 @@ function DetailView({ adminKey, id }: { adminKey: string; id: string }) {
           </>
         )}
       </div>
-    </div>
+    </Shell>
   );
 }
 
