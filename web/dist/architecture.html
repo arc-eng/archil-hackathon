@@ -15,6 +15,8 @@
   .box { fill: #fff; stroke: #C9CCD0; stroke-width: 2; }
   .a { fill: none; stroke: #15171A; stroke-width: 3; marker-end: url(#h); }
   .a2 { fill: none; stroke: #15171A; stroke-width: 3; marker-end: url(#h); marker-start: url(#h); }
+  .band { fill: #EEF6F1; fill-opacity: 0.94; stroke: #007A33; stroke-width: 2.5; }
+  .bandt { font-size: 28px; font-weight: 700; fill: #007A33; }
   .person { fill: none; stroke: #15171A; stroke-width: 3.5; stroke-linecap: round; }
 </style>
 </head>
@@ -41,18 +43,15 @@
   <!-- Archil -->
   <rect x="440" y="150" width="860" height="860" rx="26" fill="#F4F2EC" stroke="#15171A" stroke-width="5"/>
   <text x="480" y="215" class="zone">Archil</text>
-  <rect x="520" y="270" width="700" height="120" rx="16" class="box" style="stroke:#15171A;stroke-width:3"/>
-  <use href="#archil" x="720" y="309" width="44" height="44"/><text x="779" y="343" class="t">Golden sandbox</text>
-  <path d="M870 390 V478" class="a"/><text x="890" y="445" class="lbl">copied</text>
-  <rect x="520" y="490" width="210" height="120" rx="16" class="box"/>
-  <rect x="765" y="490" width="210" height="120" rx="16" class="box"/>
-  <rect x="1010" y="490" width="210" height="120" rx="16" class="box"/>
-  <use href="#archil" x="590" y="503" width="30" height="30"/><use href="#claude" x="630" y="503" width="30" height="30"/><text x="625" y="568" class="t" text-anchor="middle" style="font-size:28px">Sandbox</text><text x="625" y="597" class="lbl" text-anchor="middle" style="font-size:22px">Maya</text>
-  <use href="#archil" x="835" y="503" width="30" height="30"/><use href="#claude" x="875" y="503" width="30" height="30"/><text x="870" y="568" class="t" text-anchor="middle" style="font-size:28px">Sandbox</text><text x="870" y="597" class="lbl" text-anchor="middle" style="font-size:22px">Diego</text>
-  <use href="#archil" x="1080" y="503" width="30" height="30"/><use href="#claude" x="1120" y="503" width="30" height="30"/><text x="1115" y="568" class="t" text-anchor="middle" style="font-size:28px">Sandbox</text><text x="1115" y="597" class="lbl" text-anchor="middle" style="font-size:22px">Priya</text>
-  <path d="M870 610 V778" class="a"/><text x="890" y="700" class="lbl">logged</text>
-  <rect x="520" y="790" width="700" height="120" rx="16" class="box" style="stroke:#15171A;stroke-width:3"/>
-  <text x="870" y="863" class="t" text-anchor="middle">Registry</text>
+  <!-- Three tall sandboxes, one per employee; the company layer cuts across all of them the same way (Marco, arc-eng/hq#782) -->
+  <rect x="520" y="260" width="210" height="690" rx="16" class="box"/><use href="#archil" x="590" y="276" width="30" height="30"/><use href="#claude" x="630" y="276" width="30" height="30"/><text x="625" y="340" class="t" text-anchor="middle" style="font-size:28px">Sandbox</text><text x="625" y="370" class="lbl" text-anchor="middle" style="font-size:22px">Maya</text>
+  <rect x="765" y="260" width="210" height="690" rx="16" class="box"/><use href="#archil" x="835" y="276" width="30" height="30"/><use href="#claude" x="875" y="276" width="30" height="30"/><text x="870" y="340" class="t" text-anchor="middle" style="font-size:28px">Sandbox</text><text x="870" y="370" class="lbl" text-anchor="middle" style="font-size:22px">Diego</text>
+  <rect x="1010" y="260" width="210" height="690" rx="16" class="box"/><use href="#archil" x="1080" y="276" width="30" height="30"/><use href="#claude" x="1120" y="276" width="30" height="30"/><text x="1115" y="340" class="t" text-anchor="middle" style="font-size:28px">Sandbox</text><text x="1115" y="370" class="lbl" text-anchor="middle" style="font-size:22px">Priya</text>
+  <rect x="500" y="400" width="740" height="80" rx="12" class="band"/><text x="870" y="450" class="bandt" text-anchor="middle">Company skills</text>
+  <rect x="500" y="508" width="740" height="80" rx="12" class="band"/><text x="870" y="558" class="bandt" text-anchor="middle">Design system</text>
+  <rect x="500" y="616" width="740" height="80" rx="12" class="band"/><text x="870" y="666" class="bandt" text-anchor="middle">Credentials</text>
+  <rect x="500" y="724" width="740" height="80" rx="12" class="band"/><text x="870" y="774" class="bandt" text-anchor="middle">Policies</text>
+  <rect x="500" y="832" width="740" height="80" rx="12" class="band"/><text x="870" y="882" class="bandt" text-anchor="middle">Guard rails</text>
 
   <!-- Our GCP -->
   <rect x="1440" y="150" width="420" height="860" rx="26" fill="#EEF6F1" stroke="#007A33" stroke-width="4"/>
@@ -64,12 +63,12 @@
 
   <!-- who talks to what -->
   <path d="M318 525 H380 V105 H1760 V262" class="a2"/><text x="870" y="92" class="lbl" text-anchor="middle">spec · link</text>
-  <path d="M1560 390 V445 H1150 V482" class="a"/><text x="1322" y="432" class="lbl" style="font-size:24px">build</text>
+  <path d="M1480 330 H1228" class="a"/><text x="1322" y="318" class="lbl" style="font-size:24px">build</text>
   
-  <path d="M1220 545 H1472" class="a"/>
-  <text x="1322" y="532" class="lbl" style="font-size:24px">code</text>
+  <path d="M1220 494 H1472" class="a"/>
+  <text x="1322" y="482" class="lbl" style="font-size:24px">code</text>
   <path d="M1650 580 V642" class="a"/><text x="1668" y="620" class="lbl" style="font-size:24px">deploy</text>
-  <path d="M1480 850 H1228" class="a"/><text x="1322" y="838" class="lbl" style="font-size:24px">reads</text>
+  <path d="M1480 850 H1248" class="a"/><text x="1322" y="838" class="lbl" style="font-size:24px">sees all</text>
   <path d="M250 850 H380 V1045 H1650 V918" class="a"/><text x="870" y="1036" class="lbl" text-anchor="middle">uses</text>
 </svg>
 </body>
