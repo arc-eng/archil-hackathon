@@ -124,3 +124,32 @@ def test_building_change_holds_its_slot(svc):
     svc.f.gate.set()
     drain(svc)
     assert svc.reg.get(c.id).slot == "app-01"
+
+
+# --- purge (test entries before the demo) --------------------------------------------------------------------------
+def test_purge_clears_live_slots_and_removes_only_that_person(svc):
+    a, _ = svc.request("Test Run", GOOD)
+    b, _ = svc.request("Dana", GOOD)
+    drain(svc)
+    deleted = []
+    slots = svc.purge("test run", deleted.append)
+    assert slots == [svc.f.deployed[0][1]] and svc.f.cleared == slots
+    assert svc.reg.get(a.id) is None and svc.reg.get(b.id) and deleted == ["test run"]
+    assert svc.reg.free_slot() == slots[0]
+
+
+def test_purge_refuses_while_building_and_keeps_everything_on_a_failed_clear(svc):
+    svc.f.gate = threading.Event()
+    a, _ = svc.request("Test Run", GOOD)
+    with pytest.raises(ValueError):
+        svc.purge("Test Run")
+    svc.f.gate.set()
+    drain(svc)
+
+    def bad(slot):
+        raise RuntimeError("denied")
+
+    svc._clear = bad
+    with pytest.raises(RuntimeError):
+        svc.purge("Test Run")
+    assert svc.reg.get(a.id).status == "live"

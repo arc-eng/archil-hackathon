@@ -11,5 +11,14 @@
     <h1>App</h1>
     <p>Replace this page with the app.</p>
   </main>
+  <script>
+    // Data this person keeps stays in their browser: it survives reloads and the server sleeping.
+    const store = {
+      get(key, fallback) {
+        try { const v = localStorage.getItem("app:" + key); return v === null ? fallback : JSON.parse(v); } catch { return fallback; }
+      },
+      set(key, value) { localStorage.setItem("app:" + key, JSON.stringify(value)); },
+    };
+  </script>
 </body>
 </html>

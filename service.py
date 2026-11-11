@@ -163,5 +163,29 @@ class Service:
         self.pool.submit(_clear)
         return e, ""
 
+    def purge(self, who: str, delete_sandbox=None) -> list[str]:
+        """Remove a person's entries (test runs before the demo): clear their live slots, then drop the entries, then
+        delete their sandbox. Refuses while any of their builds is running."""
+        mine = self.reg.of(who)
+        if any(a.status in ("queued", "building", "deploying", "stopping") for a in mine):
+            raise ValueError(f"{who} has a build or stop running; try again when it's done")
+        slots = sorted({a.slot for a in mine if a.status == "live" and a.slot})
+        with self.deploy_lock:
+            for slot in slots:
+                self._clear(slot)  # raises → nothing removed, the slots stay taken
+        self.reg.remove([a.id for a in mine])
+        if delete_sandbox:
+            delete_sandbox(who)
+        return slots
+
+    def remove_entry(self, id_: str) -> None:
+        """Drop one finished entry (a replaced version, a test). Live or running ones must be stopped first."""
+        a = self.reg.get(id_)
+        if not a:
+            raise KeyError(id_)
+        if a.status in ("queued", "building", "deploying", "live", "stopping"):
+            raise ValueError(f"'{a.app}' is {a.status}; stop it first")
+        self.reg.remove([id_])
+
     def minutes(self, who: str) -> float:
         return round(sum(a.build_seconds for a in self.reg.of(who)) / 60, 1)

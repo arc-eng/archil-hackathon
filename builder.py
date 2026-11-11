@@ -92,6 +92,23 @@ def _upload_text(sb, text: str, remote: str, mode: int | None = None) -> None:
         os.unlink(f.name)
 
 
+def install_company_files(sb) -> None:
+    """The company's current house rules, template and check script, into a running sandbox. Run on golden and at the
+    start of every employee build, so a rule change reaches everyone on their next request."""
+    for p in HERE.rglob("*"):
+        if p.is_file():
+            rel = p.relative_to(HERE).as_posix()
+            remote = f"/home/node/{rel}" if not rel.startswith("CLAUDE.md") else f"{APPS}/CLAUDE.md"
+            sb.files.upload_file(str(p), remote, mode=0o755 if p.suffix == ".sh" else None)
+    # bin/ is root-owned: Claude (as node) can run the check it's judged by, not edit it (qa on #2, finding 4).
+    # Only the company's files are chowned, never the person's apps wholesale.
+    r = _sh(sb, f"chown node:node {APPS} {APPS}/CLAUDE.md && chown -R node:node /home/node/template "
+            "&& chown -R root:root /home/node/bin && chmod 755 /home/node/bin /home/node/bin/*.sh "
+            "&& chmod +x /home/node/template/selftest.sh && claude --version")
+    if r.exit_code != 0:
+        raise RuntimeError(f"installing the company's files failed: {_scrub(r.stderr)[-400:]}")
+
+
 def ensure_golden(fresh: bool = False):
     """Return the golden sandbox, creating it if missing. Leaves it stopped.
     `fresh`: upload the house rules, template and scripts again, in place (a golden with employee copies can't be
@@ -106,18 +123,16 @@ def ensure_golden(fresh: bool = False):
         r = _sh(sb, SETUP)
         if r.exit_code != 0:
             raise RuntimeError(f"golden setup failed: {_scrub(r.stderr)[-400:]}")
-    for p in HERE.rglob("*"):
-        if p.is_file():
-            rel = p.relative_to(HERE).as_posix()
-            remote = f"/home/node/{rel}" if not rel.startswith("CLAUDE.md") else f"{APPS}/CLAUDE.md"
-            sb.files.upload_file(str(p), remote, mode=0o755 if p.suffix == ".sh" else None)
-    # bin/ is root-owned: Claude (as node) can run the check it's judged by, not edit it (qa on #2, finding 4)
-    r = _sh(sb, "chown -R node:node /home/node && chown -R root:root /home/node/bin && chmod 755 /home/node/bin /home/node/bin/*.sh "
-            "&& chmod +x /home/node/template/selftest.sh && claude --version")
-    if r.exit_code != 0:
-        raise RuntimeError(f"golden finish failed: {_scrub(r.stderr)[-400:]}")
+    install_company_files(sb)
     _stop(sb)
     return sb
+
+
+def delete_employee_sandbox(who: str) -> None:
+    sb = _by_name(EMP_PREFIX + slug(who))
+    if sb:
+        _stop(sb)
+        sb.delete()
 
 
 def employee_sandbox(who: str):
@@ -176,6 +191,9 @@ def build(who: str, app: str, spec_md: str, *, on_step=None) -> BuildResult:
         step("starting your sandbox")
         sb, new = employee_sandbox(who)
         step("copied the golden sandbox for you" if new else "your sandbox is back, with your earlier apps")
+        if not new:
+            install_company_files(sb)
+            step("the company's current house rules are in place")
         d = f"{APPS}/{app}"
         _sh(sb, f"mkdir -p {d} && rm -f {d}/REFUSED.md")
         _upload_text(sb, spec_md, f"{d}/SPEC.md")
