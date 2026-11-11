@@ -3,6 +3,8 @@ import { ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type App = {
   id: string;
@@ -93,81 +95,156 @@ function OpenLink({ url }: { url: string }) {
   );
 }
 
-function AppRow({ a }: { a: App }) {
+function Stat({ label, value, tone }: { label: string; value: string | number; tone?: "live" | "bad" }) {
+  const color = tone === "live" ? "text-[#007A33]" : tone === "bad" ? "text-[#B42318]" : "text-[#15171A]";
   return (
-    <div className="flex items-start justify-between gap-6 py-3">
-      <div className="min-w-0">
-        <div className="font-medium text-[#15171A]">{a.title}</div>
-        <div className="text-[#4B5057] break-words">
-          {a.status === "failed" || a.status === "refused" ? a.reason : `“${a.ask}”`}
-        </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-4 whitespace-nowrap">
-        <span className="text-[#4B5057]">
-          {a.minutes} min · {ago(a.updated)}
-        </span>
-        <StatusBadge status={a.status} />
-        <span className="w-16 text-right">{a.status === "live" && a.url ? <OpenLink url={a.url} /> : null}</span>
-      </div>
-    </div>
+    <Card className="border-[#E3E5E8] shadow-none">
+      <CardContent className="flex flex-col gap-1">
+        <span className="text-[#4B5057]">{label}</span>
+        <span className={`text-3xl font-semibold ${color}`}>{value}</span>
+      </CardContent>
+    </Card>
   );
 }
 
 function AdminView({ adminKey }: { adminKey: string }) {
   const [data, err] = usePoll<Admin>(`/api/admin/${adminKey}`);
+  const apps = (data?.people ?? []).flatMap((p) => p.apps).filter((a) => a.status !== "refused");
+  apps.sort((x, y) => y.updated - x.updated);
+  const refused = data?.refused ?? [];
+  const minutes = Math.round((data?.people ?? []).reduce((s, p) => s + p.minutes, 0) * 10) / 10;
+  const open = (a: App) => {
+    window.location.href = `/admin/${adminKey}/app/${a.id}`;
+  };
   return (
     <div className="min-h-screen bg-white text-[#15171A] text-base">
       <div className="mx-auto max-w-7xl px-10 py-10">
-        <div className="mb-8 flex items-baseline justify-between">
-          <h1 className="text-3xl font-semibold">Who is building what</h1>
+        <div className="mb-6 flex items-baseline justify-between">
+          <h1 className="text-3xl font-semibold">Apps</h1>
           <span className="text-[#4B5057]">{err ? `⚠ ${err}` : "Updates every 5 s"}</span>
         </div>
         {!data ? (
           <p className="text-[#4B5057]">{err || "Loading…"}</p>
         ) : (
-          <div className="grid grid-cols-[1fr_320px] gap-10">
-            <section>
-              {data.people.length === 0 && <p className="text-[#4B5057]">No one has asked for an app yet.</p>}
-              {data.people.map((p, i) => {
-                const apps = p.apps.filter((a) => a.status !== "refused");
-                return (
-                  <div key={p.who}>
-                    {i > 0 && <Separator className="my-6 bg-[#E3E5E8]" />}
-                    <div className="mb-1 flex items-baseline gap-3">
-                      <h2 className="text-xl font-semibold">{p.who}</h2>
-                      <span className="text-[#4B5057]">
-                        own sandbox · {p.minutes} min · {apps.length} {apps.length === 1 ? "app" : "apps"}
-                      </span>
-                    </div>
-                    {apps.length === 0 ? (
-                      <p className="py-3 text-[#4B5057]">No apps built yet.</p>
-                    ) : (
-                      apps.map((a) => <AppRow key={a.id} a={a} />)
+          <>
+            <div className="mb-8 grid grid-cols-5 gap-4">
+              <Stat label="People" value={data.people.length} />
+              <Stat label="Live apps" value={apps.filter((a) => a.status === "live").length} tone="live" />
+              <Stat label="Building now" value={apps.filter((a) => ["queued", "building", "deploying"].includes(a.status)).length} />
+              <Stat label="Refused" value={refused.length} tone={refused.length ? "bad" : undefined} />
+              <Stat label="Sandbox minutes" value={minutes} />
+            </div>
+            <Tabs defaultValue="apps">
+              <TabsList>
+                <TabsTrigger value="apps" className="text-base">Apps ({apps.length})</TabsTrigger>
+                <TabsTrigger value="refused" className="text-base">Refused requests ({refused.length})</TabsTrigger>
+              </TabsList>
+              <TabsContent value="apps">
+                <Table className="text-base">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>App</TableHead>
+                      <TableHead>Owner</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Minutes</TableHead>
+                      <TableHead>Updated</TableHead>
+                      <TableHead>Link</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {apps.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="py-6 text-[#4B5057]">No apps yet.</TableCell>
+                      </TableRow>
                     )}
-                  </div>
-                );
-              })}
-            </section>
-            <aside>
-              <Card className="border-[#E3E5E8] shadow-none">
-                <CardHeader>
-                  <CardTitle className="text-lg">Refused requests</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-5">
-                  {data.refused.length === 0 && <p className="text-[#4B5057]">None so far.</p>}
-                  {data.refused.map((a) => (
-                    <div key={a.id} className="flex flex-col gap-1">
-                      <div>
-                        <StatusBadge status="refused" />
-                      </div>
-                      <div className="break-words">“{a.ask}”</div>
-                      <div className="text-[#4B5057]">by {a.who} · {ago(a.updated)}</div>
-                      <div className="text-[#4B5057] break-words">{a.rule}</div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </aside>
+                    {apps.map((a) => (
+                      <TableRow key={a.id} onClick={() => open(a)} className="cursor-pointer">
+                        <TableCell className="max-w-[420px] whitespace-normal">
+                          <div className="font-medium">{a.title}</div>
+                          {a.status === "failed" && a.reason && <div className="text-[#4B5057] [overflow-wrap:anywhere]">{a.reason}</div>}
+                        </TableCell>
+                        <TableCell>{a.who}</TableCell>
+                        <TableCell><StatusBadge status={a.status} /></TableCell>
+                        <TableCell className="text-right tabular-nums">{a.minutes}</TableCell>
+                        <TableCell className="text-[#4B5057]">{ago(a.updated)}</TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          {a.status === "live" && a.url ? <OpenLink url={a.url} /> : null}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TabsContent>
+              <TabsContent value="refused">
+                <Table className="text-base">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Asked for</TableHead>
+                      <TableHead>By</TableHead>
+                      <TableHead>Rule</TableHead>
+                      <TableHead>When</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {refused.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="py-6 text-[#4B5057]">None so far.</TableCell>
+                      </TableRow>
+                    )}
+                    {refused.map((a) => (
+                      <TableRow key={a.id} onClick={() => open(a)} className="cursor-pointer">
+                        <TableCell className="max-w-[420px] whitespace-normal [overflow-wrap:anywhere]">“{a.ask}”</TableCell>
+                        <TableCell>{a.who}</TableCell>
+                        <TableCell className="max-w-[360px] whitespace-normal text-[#B42318]">{a.rule}</TableCell>
+                        <TableCell className="text-[#4B5057]">{ago(a.updated)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TabsContent>
+            </Tabs>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type Full = App & { spec: string; versions: App[] };
+
+function DetailView({ adminKey, id }: { adminKey: string; id: string }) {
+  const [a, err] = usePoll<Full>(`/api/admin/${adminKey}/app/${id}`);
+  return (
+    <div className="min-h-screen bg-white text-[#15171A] text-base">
+      <div className="mx-auto max-w-4xl px-10 py-10">
+        <a href={`/admin/${adminKey}`} className="text-[#4B5057] underline underline-offset-4">← All apps</a>
+        {!a ? (
+          <p className="mt-6 text-[#4B5057]">{err || "Loading…"}</p>
+        ) : (
+          <div className="mt-6 flex flex-col gap-6">
+            <div className="flex flex-wrap items-center gap-4">
+              <h1 className="text-3xl font-semibold [overflow-wrap:anywhere]">{a.title}</h1>
+              <StatusBadge status={a.status} />
+              {a.status === "live" && a.url && <OpenLink url={a.url} />}
+            </div>
+            <p className="text-[#4B5057]">
+              {a.who} · {a.minutes} sandbox min · {a.slot || "no slot"} · updated {ago(a.updated)}
+            </p>
+            {(a.status === "failed" || a.status === "refused") && <p className="text-[#B42318] [overflow-wrap:anywhere]">{a.rule || a.reason}</p>}
+            <Card className="border-[#E3E5E8] shadow-none">
+              <CardHeader><CardTitle className="text-lg">Spec</CardTitle></CardHeader>
+              <CardContent>
+                <pre className="whitespace-pre-wrap font-sans text-base [overflow-wrap:anywhere]">{a.spec}</pre>
+              </CardContent>
+            </Card>
+            <Card className="border-[#E3E5E8] shadow-none">
+              <CardHeader><CardTitle className="text-lg">Build steps</CardTitle></CardHeader>
+              <CardContent>
+                <ol className="flex flex-col gap-1 text-[#4B5057]">
+                  {a.steps.map((s, i) => <li key={i} className="[overflow-wrap:anywhere]">{s}</li>)}
+                </ol>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>
@@ -229,7 +306,8 @@ function StatusView({ id }: { id: string }) {
 }
 
 export default function App() {
-  const [, kind, arg] = window.location.pathname.split("/");
+  const [, kind, arg, sub, id] = window.location.pathname.split("/");
+  if (kind === "admin" && arg && sub === "app" && id) return <DetailView adminKey={arg} id={id} />;
   if (kind === "admin" && arg) return <AdminView adminKey={arg} />;
   if (kind === "status" && arg) return <StatusView id={arg} />;
   return <p className="p-10">Not found.</p>;

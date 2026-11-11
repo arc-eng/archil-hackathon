@@ -176,6 +176,25 @@ async def api_admin(req: Request) -> JSONResponse:
     return JSONResponse({"people": list(people.values()), "refused": refused})
 
 
+@server.custom_route("/api/admin/{key}/app/{id}", methods=["GET"])
+async def api_admin_app(req: Request) -> JSONResponse:
+    """One app's full record for the details page, spec included (the list leaves it out)."""
+    if req.path_params["key"] != admin_key():
+        return JSONResponse({"error": "not found"}, status_code=404)
+    a = service().reg.get(req.path_params["id"])
+    if not a:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    d = _public(a)
+    d["spec"] = a.spec
+    d["versions"] = [_public(x) for x in service().reg.of(a.who) if x.app == a.app]
+    return JSONResponse(d)
+
+
+@server.custom_route("/admin/{key}/app/{id}", methods=["GET"])
+async def admin_app_page(req: Request) -> Response:
+    return _page() if req.path_params["key"] == admin_key() else Response("not found", status_code=404)
+
+
 @server.custom_route("/api/admin/{key}/purge", methods=["POST"])
 async def api_purge(req: Request) -> JSONResponse:
     """Remove one person's entries and sandbox (test runs, before the demo). Same key as the admin page."""

@@ -368,3 +368,18 @@ def test_steps_show_pacific_time(fx):
     e, _ = fx.svc.request("Dana", GOOD)
     drain(fx.svc)
     assert all(re.match(r"^\d{1,2}:\d\d:\d\d [ap]m ", s) for s in fx.svc.reg.get(e.id).steps)
+
+
+def test_one_app_record_has_spec_and_versions_behind_the_key(client, fx):
+    first, _ = fx.svc.request("Dana", GOOD)
+    drain(fx.svc)
+    change, _ = fx.svc.request("Dana", {**GOOD, "ask": "add a CSV export please"}, change_of="loan-tracker")
+    drain(fx.svc)
+    k = connector.admin_key()
+    d = client.get(f"/api/admin/{k}/app/{change.id}").json()
+    assert "**Done when:**" in d["spec"] and "## Change requested" in d["spec"]
+    assert {v["id"] for v in d["versions"]} == {first.id, change.id}
+    assert client.get(f"/api/admin/wrong/app/{change.id}").status_code == 404
+    assert client.get(f"/api/admin/{k}/app/nope").status_code == 404
+    assert client.get(f"/admin/{k}/app/{change.id}").status_code == 200
+    assert client.get(f"/admin/wrong/app/{change.id}").status_code == 404
