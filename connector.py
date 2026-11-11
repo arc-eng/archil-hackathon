@@ -270,6 +270,12 @@ async def api_admin_stop(req: Request) -> JSONResponse:
     return JSONResponse({"error": err}, status_code=409) if err else JSONResponse({"stopping": a.id})
 
 
+@server.custom_route("/admin/{key}/monitoring/{page}", methods=["GET"])
+async def admin_monitoring_page(req: Request) -> Response:
+    ok = req.path_params["key"] == admin_key() and req.path_params["page"] in ("spend", "usage", "health")
+    return _page() if ok else Response("not found", status_code=404)
+
+
 @server.custom_route("/admin/{key}/app/{id}", methods=["GET"])
 async def admin_app_page(req: Request) -> Response:
     return _page() if req.path_params["key"] == admin_key() else Response("not found", status_code=404)

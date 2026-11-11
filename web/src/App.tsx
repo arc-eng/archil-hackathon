@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, ExternalLink } from "lucide-react";
+import { Activity, Check, ExternalLink, HeartPulse, Wallet } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -158,6 +158,22 @@ function Shell({ adminKey, data, who, children }: { adminKey: string; data: Admi
                   </a>
                 </li>
               ))}
+            </ul>
+          </nav>
+          <nav>
+            <h2 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-[#4B5057]">Monitoring</h2>
+            <ul className="flex flex-col gap-0.5">
+              {MONITOR_PAGES.map((m) => {
+                const on = window.location.pathname === `${base}/monitoring/${m.page}`;
+                return (
+                  <li key={m.page}>
+                    <a href={`${base}/monitoring/${m.page}`} className={`flex items-center gap-3 rounded-md px-2 py-2 ${on ? "bg-[#E3E5E8] font-medium" : "hover:bg-[#ECEEF0]"}`}>
+                      <m.icon className="size-5 shrink-0 text-[#4B5057]" />
+                      <span className="flex-1 truncate">{m.label}</span>
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
           </nav>
           <nav>
@@ -556,9 +572,225 @@ function StatusView({ id }: { id: string }) {
   );
 }
 
+
+// Monitoring (Marco, hq#782, 8:50 pm): Spend, Usage, Health. The figures are made up for the demo but fixed per app
+// (seeded from its name), and built from the apps the admin page lists, so they always match the table.
+const MONITOR_PAGES = [
+  { page: "spend", label: "Spend", icon: Wallet },
+  { page: "usage", label: "Usage", icon: Activity },
+  { page: "health", label: "Health", icon: HeartPulse },
+];
+const BUDGET = 1500; // dollars a month for building apps, Claude and cloud together
+const PER_M_TOKENS = 9; // blended dollars per million Claude tokens
+
+function seed(key: string, n: number) {
+  let h = 2166136261;
+  for (const c of `${key}:${n}`) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  return ((h >>> 0) % 10000) / 10000;
+}
+
+type Figures = { a: App; claude: number; cloud: number; tokens: number; users: number; lastOpenDays: number; uptime: number; errors: number; live: boolean };
+
+function figures(a: App): Figures {
+  const k = `${a.who.trim().toLowerCase()}/${a.app}`;
+  const live = a.status === "live";
+  const claude = Math.round(38 + seed(k, 1) * 90 + a.changes * 22);
+  const cloud = live ? Math.round(6 + seed(k, 2) * 14) : Math.round(1 + seed(k, 2) * 3);
+  const ageDays = Math.max(0, (Date.now() / 1000 - a.created) / 86400);
+  const fresh = ageDays < 1;
+  const users = !live ? 0 : fresh ? 1 + Math.floor(seed(k, 3) * 2) : 3 + Math.floor(seed(k, 3) * 12);
+  const lastOpenDays = !live ? 9 + Math.floor(seed(k, 4) * 12) : fresh ? 0 : Math.floor(seed(k, 4) * 2);
+  // a brand-new app has had no time to fail: 100% and no errors
+  const uptime = !live ? 0 : fresh ? 100 : 99.5 + Math.round(seed(k, 5) * 50) / 100;
+  const errors = !live || fresh ? 0 : seed(k, 6) > 0.75 ? 3 + Math.floor(seed(k, 7) * 9) : Math.floor(seed(k, 7) * 2);
+  return { a, claude, cloud, tokens: (claude / PER_M_TOKENS) * 1e6, users, lastOpenDays, uptime, errors, live };
+}
+
+const usd = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
+const mtok = (n: number) => `${(n / 1e6).toFixed(1)}M`;
+
+function Stat({ label, value, sub }: { label: string; value: string; sub?: React.ReactNode }) {
+  return (
+    <Card className="gap-1 py-5">
+      <CardHeader className="px-5">
+        <CardTitle className="text-sm font-medium text-[#4B5057]">{label}</CardTitle>
+      </CardHeader>
+      <CardContent className="px-5">
+        <div className="text-3xl font-semibold tabular-nums">{value}</div>
+        {sub && <div className="mt-1 text-sm text-[#4B5057]">{sub}</div>}
+      </CardContent>
+    </Card>
+  );
+}
+
+function MonitoringView({ adminKey, page }: { adminKey: string; page: string }) {
+  const [data, err] = usePoll<Admin>(`/api/admin/${adminKey}`);
+  const all = latestApps(data).map(figures);
+  const title = MONITOR_PAGES.find((m) => m.page === page)?.label ?? "Monitoring";
+  const month = new Date().toLocaleString("en-US", { month: "long" });
+  const open = (a: App) => {
+    window.location.href = `/admin/${adminKey}/app/${a.id}`;
+  };
+  let body: React.ReactNode;
+  if (!data) body = <p className="text-[#4B5057]">{err || "Loading…"}</p>;
+  else if (page === "spend") {
+    const claude = all.reduce((t, f) => t + f.claude, 0);
+    const cloud = all.reduce((t, f) => t + f.cloud, 0);
+    const total = claude + cloud;
+    const pct = Math.min(100, Math.round((total / BUDGET) * 100));
+    const byPerson = new Map<string, { who: string; apps: number; claude: number; cloud: number }>();
+    for (const f of all) {
+      const k = f.a.who.trim().toLowerCase();
+      const p = byPerson.get(k) ?? { who: f.a.who, apps: 0, claude: 0, cloud: 0 };
+      byPerson.set(k, { ...p, apps: p.apps + 1, claude: p.claude + f.claude, cloud: p.cloud + f.cloud });
+    }
+    const people = [...byPerson.values()].sort((x, y) => y.claude + y.cloud - (x.claude + x.cloud));
+    body = (
+      <div className="flex flex-col gap-8">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <Stat label="Claude tokens" value={usd(claude)} sub={`${mtok(all.reduce((t, f) => t + f.tokens, 0))} tokens`} />
+          <Stat label="Cloud" value={usd(cloud)} sub="App servers, deploys, logs" />
+          <Stat
+            label={`Total vs ${usd(BUDGET)} budget`}
+            value={usd(total)}
+            sub={
+              <div className="flex items-center gap-2">
+                <div className="h-2 flex-1 rounded-full bg-[#E3E5E8]">
+                  <div className="h-2 rounded-full bg-[#007A33]" style={{ width: `${pct}%` }} />
+                </div>
+                <span className="tabular-nums">{pct}%</span>
+              </div>
+            }
+          />
+        </div>
+        <section>
+          <h2 className="mb-2 text-xl font-semibold">By person</h2>
+          <Table className="text-base">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Person</TableHead>
+                <TableHead className="text-right">Apps</TableHead>
+                <TableHead className="text-right">Claude</TableHead>
+                <TableHead className="text-right">Cloud</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {people.map((p) => (
+                <TableRow key={p.who}>
+                  <TableCell><Owner who={p.who} /></TableCell>
+                  <TableCell className="text-right tabular-nums">{p.apps}</TableCell>
+                  <TableCell className="text-right tabular-nums">{usd(p.claude)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{usd(p.cloud)}</TableCell>
+                  <TableCell className="text-right font-medium tabular-nums">{usd(p.claude + p.cloud)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </section>
+        <section>
+          <h2 className="mb-2 text-xl font-semibold">By app</h2>
+          <Table className="text-base">
+            <TableHeader>
+              <TableRow>
+                <TableHead>App</TableHead>
+                <TableHead>Owner</TableHead>
+                <TableHead className="text-right">Claude</TableHead>
+                <TableHead className="text-right">Cloud</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[...all].sort((x, y) => y.claude + y.cloud - (x.claude + x.cloud)).map((f) => (
+                <TableRow key={f.a.id} className="cursor-pointer hover:bg-[#F7F8F9]" onClick={() => open(f.a)}>
+                  <TableCell className="font-medium">{f.a.title}</TableCell>
+                  <TableCell><Owner who={f.a.who} /></TableCell>
+                  <TableCell className="text-right tabular-nums">{usd(f.claude)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{usd(f.cloud)}</TableCell>
+                  <TableCell className="text-right font-medium tabular-nums">{usd(f.claude + f.cloud)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </section>
+      </div>
+    );
+  } else if (page === "usage") {
+    const rows = [...all].sort((x, y) => x.lastOpenDays - y.lastOpenDays || y.users - x.users);
+    body = (
+      <Table className="text-base">
+        <TableHeader>
+          <TableRow>
+            <TableHead>App</TableHead>
+            <TableHead>Owner</TableHead>
+            <TableHead className="text-right">Active users (7 days)</TableHead>
+            <TableHead>Last opened</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((f) => {
+            const idle = f.lastOpenDays >= 7;
+            return (
+              <TableRow key={f.a.id} className="cursor-pointer hover:bg-[#F7F8F9]" onClick={() => open(f.a)}>
+                <TableCell className="font-medium">{f.a.title}</TableCell>
+                <TableCell><Owner who={f.a.who} /></TableCell>
+                <TableCell className="text-right tabular-nums">{f.users} of 50</TableCell>
+                <TableCell>
+                  {idle ? (
+                    <Badge className="h-6 px-2.5 text-sm bg-[#FEF3F2] text-[#B42318]">Not opened in {f.lastOpenDays} days</Badge>
+                  ) : f.lastOpenDays === 0 ? (
+                    "Today"
+                  ) : (
+                    "Yesterday"
+                  )}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    );
+  } else {
+    body = (
+      <Table className="text-base">
+        <TableHeader>
+          <TableRow>
+            <TableHead>App</TableHead>
+            <TableHead>Owner</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Uptime (30 days)</TableHead>
+            <TableHead className="text-right">Errors (24 h)</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {[...all].sort((x, y) => y.errors - x.errors).map((f) => (
+            <TableRow key={f.a.id} className="cursor-pointer hover:bg-[#F7F8F9]" onClick={() => open(f.a)}>
+              <TableCell className="font-medium">{f.a.title}</TableCell>
+              <TableCell><Owner who={f.a.who} /></TableCell>
+              <TableCell><StatusBadge status={f.a.status} /></TableCell>
+              <TableCell className="text-right tabular-nums">{f.live ? `${f.uptime.toFixed(2)}%` : "—"}</TableCell>
+              <TableCell className={`text-right tabular-nums ${f.errors >= 3 ? "font-medium text-[#B42318]" : ""}`}>{f.live ? f.errors : "—"}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  }
+  return (
+    <Shell adminKey={adminKey} data={data} who="">
+      <div className="mb-6 flex flex-wrap items-baseline gap-4">
+        <h1 className="text-3xl font-semibold">{title}</h1>
+        <span className="text-[#4B5057]">{err ? `⚠ ${err}` : page === "spend" ? `${month} so far` : "Every app the company's people built"}</span>
+      </div>
+      {body}
+    </Shell>
+  );
+}
+
 export default function App() {
   const [, kind, arg, sub, id] = window.location.pathname.split("/");
   if (kind === "admin" && arg && sub === "app" && id) return <DetailView adminKey={arg} id={id} />;
+  if (kind === "admin" && arg && sub === "monitoring" && id) return <MonitoringView adminKey={arg} page={id} />;
   if (kind === "admin" && arg) return <AdminView adminKey={arg} />;
   if (kind === "status" && arg) return <StatusView id={arg} />;
   return <p className="p-10">Not found.</p>;

@@ -514,3 +514,11 @@ def test_personas_route_serves_only_files_in_the_folder(client):
     assert client.get("/personas/..%2Fconnector.py").status_code == 404
     assert client.get("/personas/.hidden").status_code == 404
     assert client.get("/personas/nope.png").status_code == 404
+
+
+def test_monitoring_pages_need_the_key_and_a_known_page(client):
+    k = connector.admin_key()
+    for page in ("spend", "usage", "health"):
+        assert client.get(f"/admin/{k}/monitoring/{page}").status_code == 200
+    assert client.get(f"/admin/{k}/monitoring/other").status_code == 404
+    assert client.get("/admin/wrong/monitoring/spend").status_code == 404
