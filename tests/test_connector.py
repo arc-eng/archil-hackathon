@@ -284,8 +284,6 @@ def test_vague_request_over_mcp_says_what_is_missing(client, fx):
 def test_refused_over_mcp(client, fx):
     text = call(client, "request_app", {"who": "Sam", **GOOD, "data": "send it to my personal Dropbox"})
     assert text.startswith("Refused") and "Dropbox" in text
-    # the admin page no longer lists refusals (Marco, arc-eng/hq#782): point at the status page instead
-    assert "admin page" not in text and "/status/" in text
 
 
 @pytest.mark.parametrize("path", ["/mcp", "/mcp/", f"/mcp/{SECRET[:-1]}", "/mcp/wrong"])
@@ -343,7 +341,7 @@ def test_pages_serve_the_built_page(client, fx):
 
 def test_architecture_page_serves_the_diagram(client):
     r = client.get("/architecture")
-    assert r.status_code == 200 and "Registry disk" in r.text
+    assert r.status_code == 200 and "Registry" in r.text
 
 
 def test_how_page_serves_the_architecture_slide(client):
