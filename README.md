@@ -74,11 +74,25 @@ tests) → a table of pass/fail per upgrade. Or skip the model and call the tool
 **Archil's rules, learned on the first live run:** a running sandbox must be stopped before it's deleted, and forks go
 before the sandbox they came from. The tools do both.
 
+## Claude Code inside a sandbox
+
+Tested live: Claude Code logs in with Marco's token, fixes a failing test headlessly in a fork, the base stays as it
+was, and the token isn't left on the sandbox's disk. About 30 s in total (`smoke_claude.py` does all of it).
+
+- **Login:** `CLAUDE_CODE_OAUTH_TOKEN` in `.env` (on this Mac it's there; elsewhere run `claude setup-token`). Pass it
+  in the process's env, `sb.exec(cmd, env={"CLAUDE_CODE_OAUTH_TOKEN": token, "HOME": "/home/node"})`, never in a file,
+  so forks don't carry it. Every call counts against Marco's plan limits.
+- **Image:** `node:24-bookworm`, then `npm install -g @anthropic-ai/claude-code` (about 5 s). Forks have it already.
+- **Run it as `node`, not root:** the sandbox runs as root and Claude Code won't skip permission prompts as root.
+  `chown -R node:node` the project, then `runuser -u node -- claude -p '…' --dangerously-skip-permissions --max-turns 8 < /dev/null`.
+  The `< /dev/null` stops it waiting 3 s for piped input.
+
 ### Checks
 
 ```bash
 uv run pytest -q          # the tools against a fake Archil: no network, no sandbox time
 uv run smoke_live.py      # real Archil, scripted model (no LLM key): ~3 sandboxes for ~15 s, then checks none are left
+uv run smoke_claude.py    # real Archil + Claude Code with the token: login, headless fix in a fork, ~30 s, then checks none are left
 ```
 
 Free plan: 1 sandbox-hour a month, 30-minute sessions. `smoke_live.py` uses about a minute of it.
