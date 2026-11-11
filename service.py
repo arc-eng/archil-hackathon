@@ -116,7 +116,7 @@ class Service:
         try:
             self.reg.update(id_, status="building")
             r = self._build(e.who, e.app, e.spec, on_step=lambda m: self.reg.step(id_, m))
-            self.reg.update(id_, build_seconds=r.seconds, sandbox=builder.EMP_PREFIX + builder.slug(e.who))
+            self.reg.update(id_, build_seconds=r.seconds, sandbox=builder.EMP_PREFIX + builder.slug(e.who), golden=getattr(r, "golden", 0))
             if r.status == "refused":
                 self.reg.update(id_, status="refused", rule=r.reason, reason="Refused in the sandbox: " + r.reason)
                 return

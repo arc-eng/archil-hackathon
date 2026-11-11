@@ -30,10 +30,7 @@ CLAUDE_TIMEOUT = 900
 MAX_TTL = 1800  # plan limit: 30 min per session
 IDLE_TTL = 600
 
-SETUP = r"""set -e
-npm install -g @anthropic-ai/claude-code >/dev/null 2>&1
-mkdir -p /home/node/apps /home/node/bin /home/node/template/public
-"""
+SETUP = (Path(__file__).parent / "golden" / "setup.sh").read_text()
 
 
 def slug(text: str, n: int = 30) -> str:
@@ -92,23 +89,6 @@ def _upload_text(sb, text: str, remote: str, mode: int | None = None) -> None:
         os.unlink(f.name)
 
 
-def install_company_files(sb) -> None:
-    """The company's current house rules, template and check script, into a running sandbox. Run on golden and at the
-    start of every employee build, so a rule change reaches everyone on their next request."""
-    for p in HERE.rglob("*"):
-        if p.is_file():
-            rel = p.relative_to(HERE).as_posix()
-            remote = f"/home/node/{rel}" if not rel.startswith("CLAUDE.md") else f"{APPS}/CLAUDE.md"
-            sb.files.upload_file(str(p), remote, mode=0o755 if p.suffix == ".sh" else None)
-    # bin/ is root-owned: Claude (as node) can run the check it's judged by, not edit it (qa on #2, finding 4).
-    # Only the company's files are chowned, never the person's apps wholesale.
-    r = _sh(sb, f"chown node:node {APPS} {APPS}/CLAUDE.md && chown -R node:node /home/node/template "
-            "&& chown -R root:root /home/node/bin && chmod 755 /home/node/bin /home/node/bin/*.sh "
-            "&& chmod +x /home/node/template/selftest.sh && claude --version")
-    if r.exit_code != 0:
-        raise RuntimeError(f"installing the company's files failed: {_scrub(r.stderr)[-400:]}")
-
-
 def ensure_golden(fresh: bool = False):
     """Return the golden sandbox, creating it if missing. Leaves it stopped.
     `fresh`: upload the house rules, template and scripts again, in place (a golden with employee copies can't be
@@ -123,7 +103,9 @@ def ensure_golden(fresh: bool = False):
         r = _sh(sb, SETUP)
         if r.exit_code != 0:
             raise RuntimeError(f"golden setup failed: {_scrub(r.stderr)[-400:]}")
-    install_company_files(sb)
+    import golden
+
+    golden.install(sb, golden.snapshot(), 0)  # the base; published versions are copies of it (golden.publish)
     _stop(sb)
     return sb
 
@@ -141,9 +123,11 @@ def employee_sandbox(who: str):
     sb = _by_name(name)
     if sb:
         return _running(sb), False
-    golden = ensure_golden()
-    sb = golden.fork(name=name)
-    _stop(golden)  # forking may wake it
+    import golden
+
+    base = golden.latest_sandbox() or ensure_golden()
+    sb = base.fork(name=name)
+    _stop(base)  # forking may wake it
     return _running(sb), True
 
 
@@ -165,13 +149,15 @@ def has_secret(sb, d: str) -> bool:
 class BuildResult:
     status: str  # built | failed | refused
     reason: str = ""
+    golden: int = 0  # the golden version the build ran on
     seconds: float = 0.0
     source: str = ""  # local folder with the app's code + Dockerfile, ready to deploy
     log: list[str] = field(default_factory=list)
 
 
 PROMPT = (
-    "Build the app described in SPEC.md in this folder, following the house rules in /home/node/apps/CLAUDE.md. "
+    "Build the app described in SPEC.md in this folder, following the company's house rules (your CLAUDE.md) and "
+    "using the company's skills wherever they apply. "
     "Finish only when `/home/node/bin/check.sh {app}` prints ALL CHECKS PASSED, or after writing REFUSED.md."
 )
 
@@ -191,9 +177,10 @@ def build(who: str, app: str, spec_md: str, *, on_step=None) -> BuildResult:
         step("starting your sandbox")
         sb, new = employee_sandbox(who)
         step("copied the golden sandbox for you" if new else "your sandbox is back, with your earlier apps")
-        if not new:
-            install_company_files(sb)
-            step("the company's current house rules are in place")
+        import golden
+
+        res.golden = golden.sync(sb)
+        step(f"golden v{res.golden}: the company's current house rules and skills are in place")
         d = f"{APPS}/{app}"
         _sh(sb, f"mkdir -p {d} && rm -f {d}/REFUSED.md")
         _upload_text(sb, spec_md, f"{d}/SPEC.md")
@@ -249,7 +236,11 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
 
     load_dotenv()
-    if sys.argv[1:2] == ["golden"]:
+    if sys.argv[1:2] == ["publish"]:
+        import golden
+
+        print(f"published golden v{golden.publish()}")
+    elif sys.argv[1:2] == ["golden"]:
         g = ensure_golden(fresh="--fresh" in sys.argv)
         print(f"golden {g.id} status={_status(g)}")
     elif sys.argv[1:2] == ["build"]:
@@ -257,4 +248,4 @@ if __name__ == "__main__":
         r = build(who, app, Path(spec_file).read_text(), on_step=lambda m: print("·", m, flush=True))
         print(f"RESULT {r.status} {r.seconds:.0f}s {r.reason} {r.source}")
     else:
-        print("usage: builder.py golden [--fresh] | build <who> <app> <spec.md>")
+        print("usage: builder.py publish | golden [--fresh] | build <who> <app> <spec.md>")
