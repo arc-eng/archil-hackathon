@@ -151,8 +151,15 @@ async def health(_: Request) -> JSONResponse:
 
 @server.custom_route("/api/status/{id}", methods=["GET"])
 async def api_status(req: Request) -> JSONResponse:
-    a = service().reg.get(req.path_params["id"])
-    return JSONResponse(_public(a)) if a else JSONResponse({"error": "not found"}, status_code=404)
+    reg = service().reg
+    a = reg.get(req.path_params["id"])
+    if not a:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    d = _public(a)
+    # a version replaced by a change points on to the live one, so an old status link never dead-ends
+    now = next((x for x in reg.of(a.who) if x.app == a.app and x.status == "live" and x.id != a.id), None)
+    d["current_url"] = now.url if now else ""
+    return JSONResponse(d)
 
 
 @server.custom_route("/api/admin/{key}", methods=["GET"])

@@ -316,3 +316,23 @@ def test_refuses_to_start_without_a_good_secret(monkeypatch, value):
         monkeypatch.setenv("CONNECTOR_PATH_SECRET", value)
     with pytest.raises(SystemExit):
         connector.build_app()
+
+
+def test_replaced_version_status_points_to_the_live_one(client, fx):
+    first, _ = fx.svc.request("Dana", GOOD)
+    drain(fx.svc)
+    change, _ = fx.svc.request("Dana", {**GOOD, "ask": "add a CSV export please"}, change_of="loan-tracker")
+    drain(fx.svc)
+    d = client.get(f"/api/status/{first.id}").json()
+    assert d["status"] == "stopped" and d["current_url"] == "https://app-01.example"
+    assert client.get(f"/api/status/{change.id}").json()["current_url"] == ""
+
+
+def test_pages_serve_the_built_page(client, fx):
+    e, _ = fx.svc.request("Dana", GOOD)
+    r = client.get(f"/status/{e.id}")
+    assert r.status_code == 200 and "<div id=\"root\">" in r.text
+    assert client.get(f"/admin/{connector.admin_key()}").status_code == 200
+    asset = next(p for p in (connector.WEB / "assets").iterdir() if p.suffix == ".js")
+    assert client.get(f"/assets/{asset.name}").status_code == 200
+    assert client.get("/assets/..%2F..%2Fconnector.py").status_code == 404

@@ -139,7 +139,9 @@ def has_secret(sb, d: str) -> bool:
     """True if Marco's token, or anything shaped like a Claude key, is in the app's folder. The token goes in through
     env only, never on the command line (qa on #2, finding 1)."""
     pats = " ".join(f"-e {shlex.quote(p)}" for p in SECRET_SHAPES)
-    r = _sh(sb, f'grep -rqF -e "$T" {pats} {shlex.quote(d)} && echo FOUND || echo CLEAN', env={"T": _env()["CLAUDE_CODE_OAUTH_TOKEN"]})
+    # grep: 0 = found, 1 = clean, 2+ = error. Only exit 1 counts as clean (qa on #3: `|| echo CLEAN` also caught errors).
+    r = _sh(sb, f'grep -rqF -e "$T" {pats} {shlex.quote(d)}; case $? in 1) echo CLEAN;; 0) echo FOUND;; *) echo ERROR;; esac',
+            env={"T": _env()["CLAUDE_CODE_OAUTH_TOKEN"]})
     out = (r.stdout or "").strip()
     return out != "CLEAN"  # anything but a clean answer counts as found: never deploy on a bad read
 
