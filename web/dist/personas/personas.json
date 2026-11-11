@@ -2,5 +2,5 @@
   {"name": "Maya Okafor", "role": "Front desk", "face": "maya.png"},
   {"name": "Diego Ramírez", "role": "Head coach", "face": "diego.png"},
   {"name": "Priya Nair", "role": "Operations", "face": "priya.png"},
-  {"name": "Sam Whitfield", "role": "Owner · admin", "face": "sam.png", "admin": true}
+  {"name": "Sam Whitfield", "role": "Admin", "face": "sam.png", "admin": true}
 ]
