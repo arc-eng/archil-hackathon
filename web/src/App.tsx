@@ -176,7 +176,7 @@ function SignedIn() {
   return (
     <span className="inline-flex items-center gap-2 rounded-full border border-[#E3E5E8] py-1 pr-4 pl-1">
       <Owner who={sam.name} size={32} />
-      {sam.role && <span className="text-sm text-[#4B5057]">{sam.role}</span>}
+      <span className="text-sm text-[#4B5057]">Admin</span>
     </span>
   );
 }
