@@ -29,7 +29,11 @@ _cache: dict[int, bytes] = {}
 _lock = threading.Lock()
 
 
-def snapshot(src: Path = SRC) -> bytes:
+def snapshot(src: Path | None = None) -> bytes:
+    return _snap(src or SRC)
+
+
+def _snap(src: Path) -> bytes:
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:gz") as t:
         for p in sorted(src.rglob("*")):
@@ -117,6 +121,35 @@ def sync(sb, store: Store | None = None) -> int:
     v = store.latest()
     install(sb, store.version(v) if v else snapshot(), v)
     return v
+
+
+def _files(body: bytes) -> dict[str, bytes]:
+    with tarfile.open(fileobj=io.BytesIO(body)) as t:
+        return {m.name: t.extractfile(m).read() for m in t.getmembers() if m.isfile()}
+
+
+def _label(path: str) -> str:
+    parts = path.split("/")
+    if parts[:2] == ["claude", "skills"] and len(parts) > 2:
+        return f"{parts[2]} skill"
+    if path == "claude/CLAUDE.md":
+        return "house rules"
+    if parts[0] == "template":
+        return "app template"
+    if parts[0] == "bin":
+        return "check script"
+    return path
+
+
+def pending(store: Store | None = None) -> list[str]:
+    """What publishing now would change, in plain words ("company-brand skill", "house rules"), from the folder as
+    deployed against the latest published version."""
+    store = store or default_store()
+    v = store.latest()
+    now = _files(snapshot())
+    before = _files(store.version(v)) if v else {}
+    changed = {p for p in now if before.get(p) != now[p]} | {p for p in before if p not in now}
+    return sorted({_label(p) for p in changed})
 
 
 def sandbox_name(v: int) -> str:
