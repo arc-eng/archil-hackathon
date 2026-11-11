@@ -111,7 +111,9 @@ def ensure_golden(fresh: bool = False):
             rel = p.relative_to(HERE).as_posix()
             remote = f"/home/node/{rel}" if not rel.startswith("CLAUDE.md") else f"{APPS}/CLAUDE.md"
             sb.files.upload_file(str(p), remote, mode=0o755 if p.suffix == ".sh" else None)
-    r = _sh(sb, "chown -R node:node /home/node && chmod +x /home/node/bin/*.sh /home/node/template/selftest.sh && claude --version")
+    # bin/ is root-owned: Claude (as node) can run the check it's judged by, not edit it (qa on #2, finding 4)
+    r = _sh(sb, "chown -R node:node /home/node && chown -R root:root /home/node/bin && chmod 755 /home/node/bin /home/node/bin/*.sh "
+            "&& chmod +x /home/node/template/selftest.sh && claude --version")
     if r.exit_code != 0:
         raise RuntimeError(f"golden finish failed: {_scrub(r.stderr)[-400:]}")
     _stop(sb)
@@ -128,6 +130,18 @@ def employee_sandbox(who: str):
     sb = golden.fork(name=name)
     _stop(golden)  # forking may wake it
     return _running(sb), True
+
+
+SECRET_SHAPES = ["sk-ant-"]  # any Anthropic key or token, not only ours
+
+
+def has_secret(sb, d: str) -> bool:
+    """True if Marco's token, or anything shaped like a Claude key, is in the app's folder. The token goes in through
+    env only, never on the command line (qa on #2, finding 1)."""
+    pats = " ".join(f"-e {shlex.quote(p)}" for p in SECRET_SHAPES)
+    r = _sh(sb, f'grep -rqF -e "$T" {pats} {shlex.quote(d)} && echo FOUND || echo CLEAN', env={"T": _env()["CLAUDE_CODE_OAUTH_TOKEN"]})
+    out = (r.stdout or "").strip()
+    return out != "CLEAN"  # anything but a clean answer counts as found: never deploy on a bad read
 
 
 @dataclass
@@ -183,6 +197,10 @@ def build(who: str, app: str, spec_md: str, *, on_step=None) -> BuildResult:
         chk = _sh(sb, f"{AS_NODE}/home/node/bin/check.sh {shlex.quote(app)}", timeout=120)
         if chk.exit_code != 0 or "ALL CHECKS PASSED" not in (chk.stdout or ""):
             res.reason = "its own checks failed: " + _scrub(chk.stdout)[-300:].strip()
+            return res
+        if has_secret(sb, d):
+            res.reason = "the app's files contained a secret (a Claude key), so it wasn't deployed"
+            step("stopped: a secret was found in the app's files")
             return res
         step("packing the code for the company's builder")
         tgz = f"/tmp/{app}.tgz"

@@ -147,15 +147,18 @@ class Service:
         if e.status != "live":
             return e, f"'{app}' isn't live (it's {e.status}), so there's nothing to stop"
         slot = e.slot
-        self.reg.update(e.id, status="stopped", url="", reason="stopped by its owner")
+        # "stopping" keeps the slot taken until the clear is done, so a build finishing meanwhile can't land in it
+        # and then be wiped by this clear (qa on #2, finding 2).
+        self.reg.update(e.id, status="stopping", reason="stopping")
 
         def _clear():
             try:
                 with self.deploy_lock:
                     self._clear(slot)
+                self.reg.update(e.id, status="stopped", url="", reason="stopped by its owner")
                 self.reg.step(e.id, f"{slot} cleared")
-            except Exception as ex:  # noqa: BLE001
-                self.reg.step(e.id, f"clearing {slot} failed: {ex}")
+            except Exception as ex:  # noqa: BLE001 - the slot stays taken; never reused while it might still serve
+                self.reg.update(e.id, reason=f"couldn't clear {slot}: {str(ex)[:200]}")
 
         self.pool.submit(_clear)
         return e, ""
