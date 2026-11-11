@@ -22,7 +22,7 @@ lives.
 - **Only the company's builder deploys.** It picks up the built code and deploys it to the company's own cloud
   (Cloud Run), under an account that may only create app services. Each app runs with no permissions of its own.
 - **Requests that send company data outside are refused** (a personal Dropbox, personal email, outside webhooks).
-- **The admin sees every app**: who built it, its status and link, and spend, usage and health, and can stop any app.
+- **The admin sees every app**: who built it, its status and link, spend, usage and health (sample figures in this demo), and can stop any app.
 
 ## Run it
 
