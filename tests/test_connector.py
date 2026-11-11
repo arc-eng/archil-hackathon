@@ -437,3 +437,67 @@ def test_details_api_leaves_out_what_a_refused_request_lacks(client, fx):
     e, _ = fx.svc.request("Sam", {**GOOD, "data": "to my personal Dropbox"})
     d = client.get(f"/api/admin/{connector.admin_key()}/app/{e.id}").json()
     assert d["links"] == []  # no slot, no build, no sandbox: no dead buttons
+
+
+# --- personas: re-own apps to a persona (arc-eng/hq#782) -------------------------------------------------------------
+def test_reown_moves_entries_and_copies_the_sandbox(client, fx, monkeypatch):
+    import builder
+
+    copied = []
+    monkeypatch.setattr(builder, "copy_sandbox", lambda src, to: copied.append((src, to)) or "emp-diego-ramirez")
+    e, _ = fx.svc.request("Coach A", GOOD)
+    drain(fx.svc)
+    url = f"/api/admin/{connector.admin_key()}/reown"
+    assert client.post(url.replace(connector.admin_key(), "wrong"), json={"ids": [e.id], "to": "Diego Ramírez"}).status_code == 404
+    r = client.post(url, json={"ids": [e.id], "to": " Diego Ramírez "})
+    assert r.status_code == 200
+    a = fx.svc.reg.get(e.id)
+    assert a.who == "Diego Ramírez" and a.sandbox == "emp-diego-ramirez" and a.status == "live" and a.url
+    assert copied == [("emp-coach-a", "Diego Ramírez")]
+    assert fx.svc.reg.of("Coach A") == [] and [x.id for x in fx.svc.reg.of("diego ramírez")] == [e.id]
+
+
+def test_reown_moves_nothing_if_the_copy_fails_or_an_id_is_unknown(client, fx, monkeypatch):
+    import builder
+
+    def boom(src, to):
+        raise RuntimeError("archil said no")
+
+    monkeypatch.setattr(builder, "copy_sandbox", boom)
+    e, _ = fx.svc.request("Coach B", GOOD)
+    drain(fx.svc)
+    url = f"/api/admin/{connector.admin_key()}/reown"
+    assert client.post(url, json={"ids": [e.id], "to": "Maya Okafor"}).status_code == 500
+    assert client.post(url, json={"ids": [e.id, "nope"], "to": "Maya Okafor"}).status_code == 404
+    assert client.post(url, json={"ids": [e.id], "to": "  "}).status_code == 409
+    assert fx.svc.reg.get(e.id).who == "Coach B" and fx.svc.reg.get(e.id).sandbox == "emp-coach-b"
+
+
+def test_reown_refuses_while_building(client, fx, monkeypatch):
+    import threading
+
+    import builder
+
+    monkeypatch.setattr(builder, "copy_sandbox", lambda src, to: "x")
+    fx.gate = threading.Event()
+    e, _ = fx.svc.request("Coach A", GOOD)
+    r = client.post(f"/api/admin/{connector.admin_key()}/reown", json={"ids": [e.id], "to": "Diego Ramírez"})
+    fx.gate.set()
+    drain(fx.svc)
+    assert r.status_code == 409 and fx.svc.reg.get(e.id).who == "Coach A"
+
+
+def test_refused_entry_without_a_sandbox_moves_without_a_copy(client, fx, monkeypatch):
+    import builder
+
+    copied = []
+    monkeypatch.setattr(builder, "copy_sandbox", lambda src, to: copied.append(src) or "y")
+    e, _ = fx.svc.request("Coach B", {**GOOD, "data": "to my personal Dropbox"})
+    r = client.post(f"/api/admin/{connector.admin_key()}/reown", json={"ids": [e.id], "to": "Maya Okafor"})
+    assert r.status_code == 200 and copied == [] and fx.svc.reg.get(e.id).who == "Maya Okafor" and fx.svc.reg.get(e.id).sandbox == ""
+
+
+def test_personas_route_serves_only_files_in_the_folder(client):
+    assert client.get("/personas/..%2Fconnector.py").status_code == 404
+    assert client.get("/personas/.hidden").status_code == 404
+    assert client.get("/personas/nope.png").status_code == 404

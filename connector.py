@@ -303,6 +303,39 @@ async def api_purge(req: Request) -> JSONResponse:
     return JSONResponse({"removed": who, "cleared": slots})
 
 
+
+@server.custom_route("/api/admin/{key}/reown", methods=["POST"])
+async def api_reown(req: Request) -> JSONResponse:
+    """Move entries to another owner, e.g. a persona for the stage: {"ids": [...], "to": "Maya Okafor"}. Same key as
+    the admin page. The old owner's sandbox is copied to the new owner's name (the old one stays)."""
+    if req.path_params["key"] != admin_key():
+        return JSONResponse({"error": "not found"}, status_code=404)
+    body = (await req.json()) or {}
+    ids, to = [str(i) for i in body.get("ids") or []], str(body.get("to", ""))
+    import asyncio
+
+    import builder
+
+    try:
+        moved = await asyncio.to_thread(service().reown, ids, to, builder.copy_sandbox)
+    except KeyError as e:
+        return JSONResponse({"error": f"not found: {e}"}, status_code=404)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=409)
+    except Exception as e:  # noqa: BLE001
+        return JSONResponse({"error": str(e)[:300]}, status_code=500)
+    return JSONResponse({"moved": moved, "to": to.strip()})
+
+
+@server.custom_route("/personas/{file}", methods=["GET"])
+async def personas(req: Request) -> Response:
+    """The personas' faces and personas.json (web/public/personas, copied into the build)."""
+    name = req.path_params["file"]
+    f = WEB / "personas" / name
+    if "/" in name or name.startswith(".") or not f.is_file():
+        return Response("not found", status_code=404)
+    return FileResponse(f)
+
 def _page() -> Response:
     index = WEB / "index.html"
     return FileResponse(index) if index.exists() else Response("page not built", status_code=503)
