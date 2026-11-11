@@ -134,3 +134,20 @@ def test_publish_endpoint_needs_the_key(monkeypatch):
             assert c.get(f"/api/admin/{k}").json()["golden"] == 3
     finally:
         connector.set_service(None)
+
+
+def test_pending_names_what_publish_would_change(fake_archil, tmp_path, monkeypatch):
+    st = golden.Store()
+    src = tmp_path / "g"
+    (src / "claude").mkdir(parents=True)
+    (src / "claude" / "CLAUDE.md").write_text("rules")
+    monkeypatch.setattr(golden, "SRC", src)
+    monkeypatch.setattr(golden, "snapshot", lambda s=None: golden.__dict__["_snap"](src))
+    assert golden.pending(st) == ["house rules"]  # nothing published yet: everything is pending
+    golden.publish(st)
+    assert golden.pending(st) == []
+    (src / "claude" / "skills" / "company-brand").mkdir(parents=True)
+    (src / "claude" / "skills" / "company-brand" / "SKILL.md").write_text("green")
+    assert golden.pending(st) == ["company-brand skill"]
+    (src / "claude" / "CLAUDE.md").write_text("rules v2")
+    assert golden.pending(st) == ["company-brand skill", "house rules"]

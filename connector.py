@@ -173,13 +173,18 @@ async def api_admin(req: Request) -> JSONResponse:
         p["apps"].append(_public(a))
         p["minutes"] = round(p["minutes"] + a.build_seconds / 60, 1)
     refused = [_public(a) for a in s.reg.all() if a.status == "refused"]
-    try:
-        import golden
+    import golden
 
+    latest, waiting = None, []
+    try:  # each on its own: the page works without either
         latest = golden.default_store().latest()
-    except Exception:  # noqa: BLE001 - the page still works without it
-        latest = None
-    return JSONResponse({"people": list(people.values()), "refused": refused, "golden": latest})
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        waiting = golden.pending()
+    except Exception:  # noqa: BLE001
+        pass
+    return JSONResponse({"people": list(people.values()), "refused": refused, "golden": latest, "golden_pending": waiting})
 
 
 @server.custom_route("/api/admin/{key}/publish", methods=["POST"])
