@@ -76,61 +76,6 @@ const JUMP_WORDS: Record<string, string> = {
   Sandboxes: "Each person's own Archil sandbox, where their apps are built.",
 };
 
-function PublishGolden({ adminKey, latest, pending, compact }: { adminKey: string; latest: number; pending: string[]; compact?: boolean }) {
-  const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
-  const [msg, setMsg] = useState("");
-  const next = latest + 1;
-  const publish = async () => {
-    setState("busy");
-    setMsg("");
-    try {
-      const r = await fetch(`/api/admin/${adminKey}/publish`, { method: "POST" });
-      const b = (await r.json().catch(() => ({}))) as { published?: number; error?: string };
-      if (!r.ok) throw new Error(b.error || `The server answered ${r.status}.`);
-      setState("done");
-      setMsg(`Golden v${b.published} is published. Everyone's next request uses it.`);
-    } catch (e) {
-      setState("error");
-      setMsg(e instanceof Error ? e.message : String(e));
-    }
-  };
-  return (
-    <div className={`flex flex-col gap-1 ${compact ? "items-stretch" : "items-end"}`}>
-      <div className={`flex items-center gap-3 ${compact ? "flex-wrap" : ""}`}>
-        <Badge variant="secondary" className="h-6 px-2.5 text-sm">Golden v{latest}</Badge>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              size={compact ? "sm" : "default"}
-              className={`bg-[#007A33] text-white hover:bg-[#007A33]/90 ${compact ? "text-sm" : "text-base"}`}
-              disabled={state === "busy" || pending.length === 0}
-            >
-              {state === "busy" ? "Publishing…" : compact ? "Publish new version" : "Publish new golden version"}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Publish golden v{next}?</AlertDialogTitle>
-              <AlertDialogDescription>
-                What changes: {pending.join(", ") || "nothing"}. Every person gets it on their next request; v{latest} is kept.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={publish} className="bg-[#007A33] text-white hover:bg-[#007A33]/90">
-                Publish v{next}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-      <span className={`${state === "error" ? "text-[#B42318]" : "text-[#4B5057]"} ${compact ? "text-sm" : ""}`}>
-        {msg || (pending.length ? `Waiting to publish: ${pending.join(", ")}` : "Nothing waiting to publish")}
-      </span>
-    </div>
-  );
-}
-
 // the personas' faces (Marco, hq#782): web/public/personas/personas.json, filled in by the designer; anyone not in
 // it (Marco himself, a new name) gets an initials circle
 type Persona = { name: string; role?: string; face?: string; admin?: boolean };
@@ -211,11 +156,6 @@ function Shell({ adminKey, data, who, children }: { adminKey: string; data: Admi
                     <span className="flex-1 truncate">{l.label}</span>
                     <ExternalLink className="size-4 shrink-0 text-[#9AA0A6] group-hover:text-[#4B5057]" />
                   </a>
-                  {l.label === "Golden image" && data?.golden != null && (
-                    <div className="mt-1 mb-2 pl-10 pr-2">
-                      <PublishGolden adminKey={adminKey} latest={data.golden} pending={data.golden_pending ?? []} compact />
-                    </div>
-                  )}
                 </li>
               ))}
             </ul>
