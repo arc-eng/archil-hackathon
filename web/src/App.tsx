@@ -11,6 +11,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import archilIcon from "@/assets/brand/archil.svg";
+import cloudBuildIcon from "@/assets/brand/cloud-build.svg";
+import cloudLoggingIcon from "@/assets/brand/cloud-logging.svg";
+import cloudRunIcon from "@/assets/brand/cloud-run.svg";
+import githubIcon from "@/assets/brand/github.svg";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
@@ -41,12 +46,23 @@ type Person = { who: string; apps: App[]; minutes: number };
 type Link = { label: string; url: string };
 type Admin = { people: Person[]; refused: App[]; golden?: number | null; golden_pending?: string[]; links?: Link[] };
 
+// each console's own icon (Marco, hq#782, 8:18 pm): GitHub's mark, Google Cloud's official icons (Cloud Run has its own;
+// Cloud Build and Logging use their DevOps / Observability category icons, as Google's icon guide says), Archil's logo
+const JUMP_ICONS: Record<string, string> = {
+  "Golden image": githubIcon,
+  "App servers": cloudRunIcon,
+  Deploys: cloudBuildIcon,
+  Logs: cloudLoggingIcon,
+  Sandboxes: archilIcon,
+};
+
 // quick-jump buttons into the consoles (Marco, hq#782): each opens in a new tab, in that console's own sign-in
 function JumpButton({ link, full }: { link: Link; full?: boolean }) {
   return (
     <Button variant="outline" className={`text-base ${full ? "w-full justify-between" : ""}`} asChild>
       <a href={link.url} target="_blank" rel="noreferrer">
-        <span className="truncate">{link.label}</span> <ExternalLink className="size-4 shrink-0" />
+        {JUMP_ICONS[link.label] && <img src={JUMP_ICONS[link.label]} alt="" className="size-5 shrink-0" />}
+        <span className="mr-auto truncate">{link.label}</span> <ExternalLink className="size-4 shrink-0" />
       </a>
     </Button>
   );
@@ -267,8 +283,6 @@ function AdminView({ adminKey }: { adminKey: string }) {
                   <TableHead>App</TableHead>
                   <TableHead>Owner</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Minutes</TableHead>
-                  <TableHead>Golden</TableHead>
                   <TableHead>Updated</TableHead>
                   <TableHead>Link</TableHead>
                 </TableRow>
@@ -276,7 +290,7 @@ function AdminView({ adminKey }: { adminKey: string }) {
               <TableBody>
                 {apps.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="py-6 text-[#4B5057]">No apps yet.</TableCell>
+                    <TableCell colSpan={5} className="py-6 text-[#4B5057]">No apps yet.</TableCell>
                   </TableRow>
                 )}
                 {apps.map((a) => (
@@ -287,8 +301,6 @@ function AdminView({ adminKey }: { adminKey: string }) {
                     </TableCell>
                     <TableCell><Owner who={a.who} /></TableCell>
                     <TableCell><StatusBadge status={a.status} /></TableCell>
-                    <TableCell className="text-right tabular-nums">{a.minutes}</TableCell>
-                    <TableCell className="text-[#4B5057]">{a.golden ? `v${a.golden}` : "—"}</TableCell>
                     <TableCell className="text-[#4B5057]">{ago(a.updated)}</TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       {a.status === "live" && a.url ? <OpenLink url={a.url} /> : null}
