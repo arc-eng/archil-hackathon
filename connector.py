@@ -190,6 +190,18 @@ async def api_admin_app(req: Request) -> JSONResponse:
     return JSONResponse(d)
 
 
+@server.custom_route("/api/admin/{key}/app/{id}/stop", methods=["POST"])
+async def api_admin_stop(req: Request) -> JSONResponse:
+    """The details page's Stop app: the same as the stop_app tool."""
+    if req.path_params["key"] != admin_key():
+        return JSONResponse({"error": "not found"}, status_code=404)
+    a = service().reg.get(req.path_params["id"])
+    if not a:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    _, err = service().stop(a.who, a.app)
+    return JSONResponse({"error": err}, status_code=409) if err else JSONResponse({"stopping": a.id})
+
+
 @server.custom_route("/admin/{key}/app/{id}", methods=["GET"])
 async def admin_app_page(req: Request) -> Response:
     return _page() if req.path_params["key"] == admin_key() else Response("not found", status_code=404)
