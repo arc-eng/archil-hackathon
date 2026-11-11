@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type App = {
   id: string;
@@ -52,6 +51,14 @@ function JumpButton({ link, full }: { link: Link; full?: boolean }) {
     </Button>
   );
 }
+
+const JUMP_WORDS: Record<string, string> = {
+  "Golden image": "The setup every sandbox starts from: tools, house rules, brand.",
+  "App servers": "Each live app's own server on Google Cloud.",
+  Deploys: "Every build and deploy by the company's builder.",
+  Logs: "What the apps are doing, errors included.",
+  Sandboxes: "Each person's own Archil sandbox, where their apps are built.",
+};
 
 function PublishGolden({ adminKey, latest, pending }: { adminKey: string; latest: number; pending: string[] }) {
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
@@ -173,18 +180,6 @@ function OpenLink({ url }: { url: string }) {
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: string | number; tone?: "live" | "bad" }) {
-  const color = tone === "live" ? "text-[#007A33]" : tone === "bad" ? "text-[#B42318]" : "text-[#15171A]";
-  return (
-    <Card className="border-[#E3E5E8] shadow-none">
-      <CardContent className="flex flex-col gap-1">
-        <span className="text-[#4B5057]">{label}</span>
-        <span className={`text-3xl font-semibold ${color}`}>{value}</span>
-      </CardContent>
-    </Card>
-  );
-}
-
 function AdminView({ adminKey }: { adminKey: string }) {
   const [data, err] = usePoll<Admin>(`/api/admin/${adminKey}`);
   // one row per app: its latest version; replaced versions are under History on its details page (po, hq#781)
@@ -198,110 +193,73 @@ function AdminView({ adminKey }: { adminKey: string }) {
     if (better) latest.set(k, a);
   }
   const apps = [...latest.values()].sort((x, y) => y.updated - x.updated);
-  const refused = data?.refused ?? [];
-  const minutes = Math.round((data?.people ?? []).reduce((s, p) => s + p.minutes, 0) * 10) / 10;
   const open = (a: App) => {
     window.location.href = `/admin/${adminKey}/app/${a.id}`;
   };
+  // Marco's simple layout (hq#782, 7:52 pm): title, the table, then quick access with the publish controls
   return (
     <div className="min-h-screen bg-white text-[#15171A] text-base">
       <div className="mx-auto max-w-7xl px-10 py-10">
-        <div className="mb-6 flex items-start justify-between">
-          <div className="flex items-baseline gap-4">
-            <h1 className="text-3xl font-semibold">Apps</h1>
-            <span className="text-[#4B5057]">{err ? `⚠ ${err}` : "Updates every 5 s"}</span>
-          </div>
-          {data && data.golden != null && <PublishGolden adminKey={adminKey} latest={data.golden} pending={data.golden_pending ?? []} />}
+        <div className="mb-6 flex items-baseline gap-4">
+          <h1 className="text-3xl font-semibold">Apps</h1>
+          <span className="text-[#4B5057]">{err ? `⚠ ${err}` : "Updates every 5 s"}</span>
         </div>
-        {data?.links?.length ? (
-          <div className="mb-8 flex flex-wrap gap-3">
-            {data.links.map((l) => (
-              <JumpButton key={l.label} link={l.label === "Golden image" && data.golden != null ? { ...l, label: `Golden image · v${data.golden}` } : l} />
-            ))}
-          </div>
-        ) : null}
         {!data ? (
           <p className="text-[#4B5057]">{err || "Loading…"}</p>
         ) : (
           <>
-            <div className="mb-8 grid grid-cols-5 gap-4">
-              <Stat label="People" value={data.people.length} />
-              <Stat label="Live apps" value={apps.filter((a) => a.status === "live").length} tone="live" />
-              <Stat label="Building now" value={apps.filter((a) => ["queued", "building", "deploying"].includes(a.status)).length} />
-              <Stat label="Refused" value={refused.length} tone={refused.length ? "bad" : undefined} />
-              <Stat label="Sandbox minutes" value={minutes} />
-            </div>
-            <Tabs defaultValue="apps">
-              <TabsList>
-                <TabsTrigger value="apps" className="text-base">Apps ({apps.length})</TabsTrigger>
-                <TabsTrigger value="refused" className="text-base">Refused requests ({refused.length})</TabsTrigger>
-              </TabsList>
-              <TabsContent value="apps">
-                <Table className="text-base">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>App</TableHead>
-                      <TableHead>Owner</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Minutes</TableHead>
-                      <TableHead>Golden</TableHead>
-                      <TableHead>Updated</TableHead>
-                      <TableHead>Link</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {apps.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={7} className="py-6 text-[#4B5057]">No apps yet.</TableCell>
-                      </TableRow>
+            <Table className="text-base">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>App</TableHead>
+                  <TableHead>Owner</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Minutes</TableHead>
+                  <TableHead>Golden</TableHead>
+                  <TableHead>Updated</TableHead>
+                  <TableHead>Link</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {apps.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="py-6 text-[#4B5057]">No apps yet.</TableCell>
+                  </TableRow>
+                )}
+                {apps.map((a) => (
+                  <TableRow key={a.id} onClick={() => open(a)} className="cursor-pointer">
+                    <TableCell className="max-w-[420px] whitespace-normal">
+                      <div className="font-medium">{a.title}</div>
+                      {a.status === "failed" && a.reason && <div className="text-[#4B5057] [overflow-wrap:anywhere]">{a.reason}</div>}
+                    </TableCell>
+                    <TableCell>{a.who}</TableCell>
+                    <TableCell><StatusBadge status={a.status} /></TableCell>
+                    <TableCell className="text-right tabular-nums">{a.minutes}</TableCell>
+                    <TableCell className="text-[#4B5057]">{a.golden ? `v${a.golden}` : "—"}</TableCell>
+                    <TableCell className="text-[#4B5057]">{ago(a.updated)}</TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      {a.status === "live" && a.url ? <OpenLink url={a.url} /> : null}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <section className="mt-12">
+              <h2 className="mb-2 text-xl font-semibold">Quick access</h2>
+              <ul className="divide-y divide-[#E3E5E8] border-y border-[#E3E5E8]">
+                {(data.links ?? []).map((l) => (
+                  <li key={l.label} className="flex items-center gap-6 py-4">
+                    <div className="w-56 shrink-0">
+                      <JumpButton link={l} full />
+                    </div>
+                    <span className="flex-1 text-[#4B5057]">{JUMP_WORDS[l.label] ?? ""}</span>
+                    {l.label === "Golden image" && data.golden != null && (
+                      <PublishGolden adminKey={adminKey} latest={data.golden} pending={data.golden_pending ?? []} />
                     )}
-                    {apps.map((a) => (
-                      <TableRow key={a.id} onClick={() => open(a)} className="cursor-pointer">
-                        <TableCell className="max-w-[420px] whitespace-normal">
-                          <div className="font-medium">{a.title}</div>
-                          {a.status === "failed" && a.reason && <div className="text-[#4B5057] [overflow-wrap:anywhere]">{a.reason}</div>}
-                        </TableCell>
-                        <TableCell>{a.who}</TableCell>
-                        <TableCell><StatusBadge status={a.status} /></TableCell>
-                        <TableCell className="text-right tabular-nums">{a.minutes}</TableCell>
-                        <TableCell className="text-[#4B5057]">{a.golden ? `v${a.golden}` : "—"}</TableCell>
-                        <TableCell className="text-[#4B5057]">{ago(a.updated)}</TableCell>
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          {a.status === "live" && a.url ? <OpenLink url={a.url} /> : null}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TabsContent>
-              <TabsContent value="refused">
-                <Table className="text-base">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Asked for</TableHead>
-                      <TableHead>By</TableHead>
-                      <TableHead>Rule</TableHead>
-                      <TableHead>When</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {refused.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={4} className="py-6 text-[#4B5057]">None so far.</TableCell>
-                      </TableRow>
-                    )}
-                    {refused.map((a) => (
-                      <TableRow key={a.id} onClick={() => open(a)} className="cursor-pointer">
-                        <TableCell className="max-w-[420px] whitespace-normal [overflow-wrap:anywhere]">“{a.ask}”</TableCell>
-                        <TableCell>{a.who}</TableCell>
-                        <TableCell className="max-w-[360px] whitespace-normal text-[#B42318]">{a.rule}</TableCell>
-                        <TableCell className="text-[#4B5057]">{ago(a.updated)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TabsContent>
-            </Tabs>
+                  </li>
+                ))}
+              </ul>
+            </section>
           </>
         )}
       </div>
