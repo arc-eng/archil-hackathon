@@ -5,221 +5,131 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Golden Sandbox: who owns the apps</title>
 <style>
-  :root {
-    --text: #15171A; --text-2: #4B5057; --line: #D5D8DC; --soft: #F6F7F8;
-    --green: #007A33; --green-soft: #EEF6F1; --red: #B42318; --red-soft: #FBF1F0; --red-line: #EBCFCB;
-  }
+  :root { --text: #15171A; --text-2: #4B5057; --line: #D5D8DC; --soft: #F6F7F8;
+    --green: #007A33; --green-soft: #EEF6F1; --red: #B42318; --red-soft: #FBF1F0; }
   * { box-sizing: border-box; margin: 0; }
   html, body { height: 100%; background: #fff; color: var(--text);
     font-family: "Inter Variable", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
   /* One 16:9 slide that scales with the window: 1vw = 1/100 of the width. */
-  main { width: 100vw; min-height: 100vh; padding: 2vw 4vw 2.2vw; display: flex; flex-direction: column; gap: 1.3vw; }
+  main { width: 100vw; height: 100vh; padding: 2.4vw 5vw 2.4vw; display: flex; flex-direction: column; gap: 2.6vw; overflow: hidden; }
+  svg { stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 
-  /* The switch */
-  .switch { align-self: center; display: inline-flex; padding: 0.35vw; border-radius: 999px; background: #EDEFF1;
-    border: 1px solid var(--line); }
+  .switch { align-self: center; display: inline-flex; padding: 0.35vw; border-radius: 999px; background: #EDEFF1; border: 1px solid var(--line); }
   .switch button { font: inherit; font-size: 1.6vw; font-weight: 700; border: 0; cursor: pointer; background: transparent;
-    color: var(--text-2); padding: 0.55vw 2.4vw; border-radius: 999px; transition: background .2s, color .2s; }
+    color: var(--text-2); padding: 0.6vw 2.4vw; border-radius: 999px; transition: background .2s, color .2s; }
   body[data-mode="without"] .switch [data-to="without"] { background: var(--red); color: #fff; }
   body[data-mode="with"] .switch [data-to="with"] { background: var(--green); color: #fff; }
   body[data-mode="without"] .with, body[data-mode="with"] .without { display: none; }
-  .view { display: flex; flex-direction: column; gap: 1.3vw; animation: in .35s ease; }
+  .view { flex: 1; display: flex; flex-direction: column; gap: 2.6vw; animation: in .35s ease; }
   @keyframes in { from { opacity: 0; transform: translateY(0.4vw); } to { opacity: 1; transform: none; } }
 
-  .band { border-radius: 0.5vw; padding: 1.2vw 2.4vw; }
-  .band h1 { font-size: 3vw; line-height: 1.15; letter-spacing: -0.02em; font-weight: 750; }
-  .band ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.6vw 3vw; margin-top: 1vw; }
-  .band li { font-size: 1.4vw; color: var(--text-2); display: flex; align-items: center; gap: 0.7vw; }
-  .band li::before { content: ""; width: 0.6vw; height: 0.6vw; border-radius: 50%; flex: none; }
-  .band.bad { border: 1px solid var(--red-line); border-left: 0.45vw solid var(--red); background: var(--red-soft); }
-  .band.bad li::before { background: var(--red); }
-  .band.good { border: 1px solid #CFE3D6; border-left: 0.45vw solid var(--green); background: var(--green-soft); }
-  .band.good h1 { color: var(--green); }
-  .band.good li::before { background: var(--green); }
+  h1 { font-size: 4.2vw; letter-spacing: -0.025em; font-weight: 800; line-height: 1.05; }
+  .without h1 { color: var(--red); } .with h1 { color: var(--green); }
 
-  svg { stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-  .arrow { width: 3vw; display: flex; align-items: center; justify-content: center; color: #8A8F96; flex: none; }
-  .arrow svg { width: 2.2vw; height: 2.2vw; }
-  .box { flex: 1; border: 1px solid var(--line); background: var(--soft); border-radius: 0.6vw;
-    padding: 1.2vw 1.3vw; display: flex; flex-direction: column; gap: 0.45vw; min-width: 0; }
-  .box svg { width: 2vw; height: 2vw; }
-  .box b { font-size: 1.45vw; font-weight: 700; }
-  .box span { font-size: 1.2vw; color: var(--text-2); line-height: 1.35; }
-  .who { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 0.5vw;
-    width: 8vw; font-size: 1.35vw; font-weight: 650; flex: none; }
-  .who svg { width: 2.6vw; height: 2.6vw; }
+  .box { border: 1px solid var(--line); background: var(--soft); border-radius: 0.7vw; padding: 1.3vw 1.5vw;
+    display: flex; align-items: center; gap: 1vw; }
+  .box svg { width: 2.4vw; height: 2.4vw; flex: none; }
+  .box b { display: block; font-size: 1.75vw; font-weight: 700; }
+  .box span { display: block; font-size: 1.3vw; color: var(--text-2); margin-top: 0.15vw; }
+  .who { display: flex; align-items: center; gap: 0.8vw; font-size: 1.6vw; font-weight: 650; }
+  .who svg { width: 2.4vw; height: 2.4vw; }
+  .arrow { display: flex; align-items: center; justify-content: center; color: #8A8F96; }
+  .arrow svg { width: 2.4vw; height: 2.4vw; }
 
-  /* With */
-  .flow { display: flex; align-items: flex-start; }
-  .flow > .box, .flow > .who, .flow > .arrow { margin-top: 3.45vw; height: 14.6vw; }
-  .with .box { min-height: 14.6vw; }
-  .owned { flex: 4.6; display: flex; flex-direction: column; gap: 0.8vw;
-    border: 0.18vw solid var(--green); border-radius: 0.8vw; padding: 1vw 1.1vw 1.1vw; background: #fff; }
-  .owned > .label { font-size: 1.3vw; font-weight: 700; color: var(--green); }
-  .owned .row { display: flex; align-items: stretch; flex: 1; }
-  .admin { display: flex; align-items: center; gap: 0.9vw; border: 1px solid var(--line); border-radius: 0.6vw;
-    padding: 1vw 1.3vw; background: var(--green-soft); font-size: 1.35vw; }
-  .admin svg { width: 1.9vw; height: 1.9vw; color: var(--green); flex: none; }
-  .refused { color: var(--red); font-weight: 650; }
+  /* Without: three lanes */
+  .lanes { display: grid; grid-template-columns: 13vw 3.5vw 1fr 3.5vw 1fr; row-gap: 1.2vw; align-items: stretch; }
+  .lanes .place { border: 0.15vw dashed var(--red); background: var(--red-soft); }
+  .lanes .place svg { color: var(--red); }
 
-  /* Without: three people, three tools, three places nobody controls */
-  .scatter { display: block; }
-  .lanes { display: flex; flex-direction: column; gap: 0.8vw; }
-  .lane { display: flex; align-items: stretch; }
-  .lane .who { flex-direction: row; justify-content: flex-start; width: 11vw; gap: 0.8vw; }
-  .lane .who svg { width: 2vw; height: 2vw; }
-  .lane .box { flex-direction: row; align-items: center; gap: 1vw; padding: 1vw 1.3vw; }
-  .lane .box svg { flex: none; }
-  .lane .box div { display: flex; flex-direction: column; gap: 0.2vw; }
-  .lane .place { flex: 1.25; border: 1px dashed #C9A9A4; background: #fff; }
-  .tag { align-self: center; margin-left: 1.2vw; flex: 1.1; font-size: 1.2vw; color: var(--red); font-weight: 650;
-    display: flex; align-items: center; gap: 0.6vw; line-height: 1.3; }
-  .tag svg { width: 1.6vw; height: 1.6vw; flex: none; }
-  .blind { border: 0.18vw dashed var(--red); border-radius: 0.8vw; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; text-align: center; gap: 0.8vw; padding: 1.5vw; color: var(--red); }
-  .blind svg { width: 3.4vw; height: 3.4vw; }
-  .blind b { font-size: 1.6vw; color: var(--text); }
-  .blind span { font-size: 1.2vw; color: var(--text-2); line-height: 1.35; }
+  /* With: one flow, the company's part outlined */
+  .flow { display: grid; grid-template-columns: 13vw 3.5vw 1.3fr 3.5vw 4.2fr; align-items: center; }
+  .owned { border: 0.2vw solid var(--green); border-radius: 0.9vw; padding: 1vw 1.2vw 1.2vw; }
+  .owned .label { font-size: 1.3vw; font-weight: 700; color: var(--green); margin-bottom: 0.8vw; }
+  .owned .row { display: grid; grid-template-columns: 1fr 2.6vw 1fr 2.6vw 1fr 2.6vw 1fr; align-items: stretch; }
+  .owned .box { flex-direction: column; align-items: flex-start; gap: 0.7vw; }
 
-  .persona { display: grid; grid-template-columns: 20vw 1fr; gap: 2vw; align-items: center;
-    border-radius: 0.8vw; padding: 1vw 1.8vw; }
-  .persona.bad { border: 0.18vw dashed var(--red); background: #fff; }
-  .persona.good { border: 0.18vw solid var(--green); background: var(--green-soft); }
-  .persona .me { display: flex; align-items: center; gap: 1vw; }
-  .persona .me svg { width: 3.2vw; height: 3.2vw; flex: none; }
-  .persona.bad .me svg { color: var(--red); } .persona.good .me svg { color: var(--green); }
-  .persona .me b { display: block; font-size: 1.7vw; }
-  .persona .me span { font-size: 1.15vw; color: var(--text-2); line-height: 1.3; }
-  .qs { display: flex; flex-wrap: wrap; gap: 0.7vw; }
-  .q { display: inline-flex; align-items: center; gap: 0.5vw; font-size: 1.3vw; font-weight: 650;
-    padding: 0.45vw 1vw; border-radius: 999px; background: #fff; border: 1px solid var(--line); }
-  .q i { font-style: normal; width: 1.6vw; height: 1.6vw; border-radius: 50%; color: #fff; font-size: 1.05vw;
-    display: inline-flex; align-items: center; justify-content: center; font-weight: 800; }
-  .bad .q i { background: var(--red); } .good .q i { background: var(--green); }
-  .persona p { font-size: 1.3vw; color: var(--text-2); margin-top: 0.5vw; line-height: 1.4; }
-  .persona p b { color: var(--text); }
-  footer { margin-top: auto; display: flex; justify-content: space-between; align-items: baseline; }
+  /* The admin: one line, three marks */
+  .admin { margin-top: auto; display: flex; align-items: center; gap: 2vw; border-radius: 0.9vw; padding: 1.3vw 2vw; }
+  .without .admin { border: 0.2vw dashed var(--red); }
+  .with .admin { border: 0.2vw solid var(--green); background: var(--green-soft); }
+  .admin .who { font-size: 1.9vw; font-weight: 750; }
+  .without .admin .who svg { color: var(--red); } .with .admin .who svg { color: var(--green); }
+  .mark { display: inline-flex; align-items: center; gap: 0.6vw; font-size: 1.7vw; font-weight: 650; }
+  .mark i { font-style: normal; width: 2vw; height: 2vw; border-radius: 50%; color: #fff; font-size: 1.2vw; font-weight: 800;
+    display: inline-flex; align-items: center; justify-content: center; }
+  .without .mark i { background: var(--red); } .with .mark i { background: var(--green); }
+
+  footer { display: flex; justify-content: space-between; align-items: baseline; }
   footer b { font-size: 1.6vw; font-weight: 650; }
   footer small { font-size: 1vw; color: #8A8F96; }
 </style>
 </head>
 <body data-mode="without">
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></symbol>
+  <symbol id="arrow" viewBox="0 0 24 24"><path d="M4 12h15M14 6l6 6-6 6"/></symbol>
+  <symbol id="claude" viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15.5l-1.8-4.7L5.5 9l4.7-1.3z"/><path d="M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></symbol>
+</svg>
 <main>
   <div class="switch" role="tablist" aria-label="Show">
     <button data-to="without" role="tab">Without Golden Sandbox</button>
     <button data-to="with" role="tab">With Golden Sandbox</button>
   </div>
 
-  <!-- WITHOUT -->
   <section class="view without">
-    <div class="band bad">
-      <h1>Every employee can build an app now. Nobody owns them.</h1>
-      <ul>
-        <li>Scattered across personal accounts</li>
-        <li>No security review</li>
-        <li>No one can switch them off</li>
-      </ul>
-    </div>
+    <h1>Nobody owns the apps.</h1>
+    <div class="lanes">
+      <div class="who"><svg><use href="#person"/></svg>Employee</div>
+      <div class="arrow"><svg><use href="#arrow"/></svg></div>
+      <div class="box"><svg><use href="#claude"/></svg><div><b>Claude</b><span>own account</span></div></div>
+      <div class="arrow"><svg><use href="#arrow"/></svg></div>
+      <div class="box place"><svg viewBox="0 0 24 24"><path d="M3 15a4 4 0 0 1 4-4 5 5 0 0 1 9.6-1.5A4 4 0 1 1 17 18H7a4 4 0 0 1-4-3z"/></svg><div><b>Personal hosting</b><span>keys in the code</span></div></div>
 
-    <div class="scatter">
-      <div class="lanes">
-        <div class="lane">
-          <div class="who"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>Employee 1</div>
-          <div class="box"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15.5l-1.8-4.7L5.5 9l4.7-1.3z"/></svg><div><b>Any AI tool</b><span>their own account</span></div></div>
-          <div class="arrow"><svg viewBox="0 0 24 24"><path d="M4 12h15M14 6l6 6-6 6"/></svg></div>
-          <div class="box place"><svg viewBox="0 0 24 24"><path d="M3 15a4 4 0 0 1 4-4 5 5 0 0 1 9.6-1.5A4 4 0 1 1 17 18H7a4 4 0 0 1-4-3z"/></svg><div><b>A free hosting account</b><span>on their personal card</span></div></div>
-          <div class="tag"><svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3"/></svg>Keys pasted into the code</div>
-        </div>
-        <div class="lane">
-          <div class="who"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>Employee 2</div>
-          <div class="box"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15.5l-1.8-4.7L5.5 9l4.7-1.3z"/></svg><div><b>Another AI tool</b><span>their own account</span></div></div>
-          <div class="arrow"><svg viewBox="0 0 24 24"><path d="M4 12h15M14 6l6 6-6 6"/></svg></div>
-          <div class="box place"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="11" rx="1"/><path d="M2 19h20"/></svg><div><b>A laptop under a desk</b><span>runs until someone closes it</span></div></div>
-          <div class="tag"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/></svg>Customer data on one person's machine</div>
-        </div>
-        <div class="lane">
-          <div class="who"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>Employee 3</div>
-          <div class="box"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15.5l-1.8-4.7L5.5 9l4.7-1.3z"/></svg><div><b>A third AI tool</b><span>their own account</span></div></div>
-          <div class="arrow"><svg viewBox="0 0 24 24"><path d="M4 12h15M14 6l6 6-6 6"/></svg></div>
-          <div class="box place"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M4 7l3-3h10l3 3"/></svg><div><b>A personal Dropbox</b><span>shared by link</span></div></div>
-          <div class="tag"><svg viewBox="0 0 24 24"><path d="M16 17l5-5-5-5M21 12H9M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4"/></svg>Leaves with them when they quit</div>
-        </div>
-      </div>
-    </div>
+      <div class="who"><svg><use href="#person"/></svg>Employee</div>
+      <div class="arrow"><svg><use href="#arrow"/></svg></div>
+      <div class="box"><svg><use href="#claude"/></svg><div><b>Claude</b><span>own account</span></div></div>
+      <div class="arrow"><svg><use href="#arrow"/></svg></div>
+      <div class="box place"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="11" rx="1"/><path d="M2 19h20"/></svg><div><b>A laptop</b><span>customer data on it</span></div></div>
 
-    <div class="persona bad">
-      <div class="me"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/><path d="M9 14l3 3 3-3"/></svg><div><b>The admin</b><span>The ops lead or founder who answers for IT. No engineer.</span></div></div>
-      <div>
-        <div class="qs">
-          <span class="q"><i>?</i>Which apps exist?</span>
-          <span class="q"><i>?</i>Who built them?</span>
-          <span class="q"><i>?</i>Where is the customer data?</span>
-          <span class="q"><i>?</i>How do I switch one off?</span>
-        </div>
-        <p>Hears about an app when it breaks or a customer complains. Can't set rules anyone's AI tool follows. <b>Can only ban it (people do it anyway) or allow it blind.</b></p>
-      </div>
+      <div class="who"><svg><use href="#person"/></svg>Employee</div>
+      <div class="arrow"><svg><use href="#arrow"/></svg></div>
+      <div class="box"><svg><use href="#claude"/></svg><div><b>Claude</b><span>own account</span></div></div>
+      <div class="arrow"><svg><use href="#arrow"/></svg></div>
+      <div class="box place"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M4 7l3-3h10l3 3"/></svg><div><b>Personal Dropbox</b><span>leaves when they quit</span></div></div>
+    </div>
+    <div class="admin">
+      <div class="who"><svg><use href="#person"/></svg>Admin</div>
+      <span class="mark"><i>?</i>Which apps?</span>
+      <span class="mark"><i>?</i>Whose?</span>
+      <span class="mark"><i>?</i>How to stop one?</span>
     </div>
   </section>
 
-  <!-- WITH -->
   <section class="view with">
-    <div class="band good">
-      <h1>Golden Sandbox gives the company ownership</h1>
-    </div>
-
+    <h1>The company owns every app.</h1>
     <div class="flow">
-      <div class="who">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
-        Employee
-      </div>
-      <div class="arrow"><svg viewBox="0 0 24 24"><path d="M4 12h15M14 6l6 6-6 6"/></svg></div>
-      <div class="box">
-        <svg viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>
-        <b>Claude</b>
-        <span>Asks a few questions, then writes a full spec</span>
-      </div>
-      <div class="arrow"><svg viewBox="0 0 24 24"><path d="M4 12h15M14 6l6 6-6 6"/></svg></div>
+      <div class="who"><svg><use href="#person"/></svg>Employee</div>
+      <div class="arrow"><svg><use href="#arrow"/></svg></div>
+      <div class="box"><svg><use href="#claude"/></svg><div><b>Claude</b><span>writes the spec</span></div></div>
+      <div class="arrow"><svg><use href="#arrow"/></svg></div>
       <div class="owned">
         <div class="label">Owned by the company</div>
         <div class="row">
-          <div class="box">
-            <svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
-            <b>Connector</b>
-            <span>Checks the house rules. <span class="refused">Refuses</span> vague or rule-breaking asks</span>
-          </div>
-          <div class="arrow"><svg viewBox="0 0 24 24"><path d="M4 12h15M14 6l6 6-6 6"/></svg></div>
-          <div class="box">
-            <svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5z"/><path d="M3 8v8l9 5 9-5V8M12 13v8"/></svg>
-            <b>Their own sandbox</b>
-            <span>Copied once from the golden sandbox. Builds and tests, holds no cloud keys</span>
-          </div>
-          <div class="arrow"><svg viewBox="0 0 24 24"><path d="M4 12h15M14 6l6 6-6 6"/></svg></div>
-          <div class="box">
-            <svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/></svg>
-            <b>Company builder</b>
-            <span>The only thing that can put an app live</span>
-          </div>
-          <div class="arrow"><svg viewBox="0 0 24 24"><path d="M4 12h15M14 6l6 6-6 6"/></svg></div>
-          <div class="box">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>
-            <b>Live app</b>
-            <span>At a company link, with no access to company systems</span>
-          </div>
+          <div class="box"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg><div><b>Rules</b><span>checked first</span></div></div>
+          <div class="arrow"><svg><use href="#arrow"/></svg></div>
+          <div class="box"><svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5z"/><path d="M3 8v8l9 5 9-5V8M12 13v8"/></svg><div><b>Sandbox</b><span>builds it</span></div></div>
+          <div class="arrow"><svg><use href="#arrow"/></svg></div>
+          <div class="box"><svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/></svg><div><b>Builder</b><span>deploys it</span></div></div>
+          <div class="arrow"><svg><use href="#arrow"/></svg></div>
+          <div class="box"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg><div><b>Live app</b><span>company link</span></div></div>
         </div>
       </div>
     </div>
-
-    <div class="persona good">
-      <div class="me"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/><path d="M9 14l3 3 3-3"/></svg><div><b>The admin</b><span>Same person. Now on the admin page.</span></div></div>
-      <div>
-        <div class="qs">
-          <span class="q"><i>✓</i>Every app on one page</span>
-          <span class="q"><i>✓</i>Each with its owner</span>
-          <span class="q"><i>✓</i>No company data sent outside</span>
-          <span class="q"><i>✓</i>Stop any app in one click</span>
-        </div>
-        <p><b>Sets the house rules once, and every employee's sandbox follows them.</b> Refused requests show up with the rule that stopped them.</p>
-      </div>
+    <div class="admin">
+      <div class="who"><svg><use href="#person"/></svg>Admin</div>
+      <span class="mark"><i>✓</i>Every app</span>
+      <span class="mark"><i>✓</i>Every owner</span>
+      <span class="mark"><i>✓</i>Stop in one click</span>
     </div>
   </section>
 
