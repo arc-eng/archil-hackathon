@@ -109,12 +109,14 @@ the registry.
 | `connector.py` | MCP server: `request_app`, `my_apps`, `stop_app`; `/status/<id>` and `/admin/<key>` pages and their JSON |
 | `service.py` | spec checks (vague parts refused with what's missing), the outside-data rule, background build → deploy (2 builds at once, 1 deploy) |
 | `builder.py` | golden sandbox setup, one sandbox per employee, Claude Code build, our own check, pack, stop |
-| `golden/` | what goes into the golden sandbox: house rules (`CLAUDE.md`), app template, `bin/check.sh` |
+| `golden/` | **the golden image as code:** `setup.sh` (runtimes), `claude/CLAUDE.md` (house rules), `claude/skills/` (company skills, e.g. `company-brand`), `template/`, `bin/check.sh`, `env.txt` (names only) |
+| `golden.py` | publish `golden/` as version N (a snapshot on the registry disk + sandbox `golden-vN`, a copy of the previous one); sync the latest version into a person's sandbox at the start of every request |
 | `registry.py` | every request, on the `golden-registry` Archil disk |
 | `deploy.py` | Cloud Build as `golden-builder` into `app-01`…`app-10` (devops' recipe); `clear()` puts `empty_app/` on a slot |
 
 ```bash
-uv run builder.py golden [--fresh]        # create the golden sandbox, or re-upload its files in place
+uv run builder.py publish                 # publish golden/ as the next version (or POST /api/admin/<key>/publish)
+uv run builder.py golden [--fresh]        # create the base golden sandbox
 uv run builder.py build "<who>" <app> spec.md   # one build by hand, no deploy
 uv run connector.py --admin-path          # the admin page's path (keep it private)
 ```
