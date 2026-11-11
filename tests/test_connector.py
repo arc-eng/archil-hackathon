@@ -336,3 +336,35 @@ def test_pages_serve_the_built_page(client, fx):
     asset = next(p for p in (connector.WEB / "assets").iterdir() if p.suffix == ".js")
     assert client.get(f"/assets/{asset.name}").status_code == 200
     assert client.get("/assets/..%2F..%2Fconnector.py").status_code == 404
+
+def test_purge_endpoint_needs_the_key(client, fx, monkeypatch):
+    import builder
+
+    monkeypatch.setattr(builder, "delete_employee_sandbox", lambda who: None)
+    fx.svc.request("Test Run", GOOD)
+    drain(fx.svc)
+    assert client.post("/api/admin/wrong/purge", json={"who": "Test Run"}).status_code == 404
+    r = client.post(f"/api/admin/{connector.admin_key()}/purge", json={"who": "Test Run"})
+    assert r.status_code == 200 and r.json()["cleared"] == ["app-01"]
+    assert fx.svc.reg.of("Test Run") == []
+
+
+def test_purge_one_entry_by_id_only_when_not_live(client, fx):
+    first, _ = fx.svc.request("Dana", GOOD)
+    drain(fx.svc)
+    change, _ = fx.svc.request("Dana", {**GOOD, "ask": "add a CSV export please"}, change_of="loan-tracker")
+    drain(fx.svc)
+    url = f"/api/admin/{connector.admin_key()}/purge"
+    assert client.post(url, json={"id": change.id}).status_code == 409  # live: refused
+    assert client.post(url, json={"id": first.id}).status_code == 200  # replaced: removed
+    assert fx.svc.reg.get(first.id) is None and fx.svc.reg.get(change.id).status == "live"
+    assert client.post(url, json={"id": "nope"}).status_code == 404
+    assert fx.cleared == []
+
+
+def test_steps_show_pacific_time(fx):
+    import re
+
+    e, _ = fx.svc.request("Dana", GOOD)
+    drain(fx.svc)
+    assert all(re.match(r"^\d{1,2}:\d\d:\d\d [ap]m ", s) for s in fx.svc.reg.get(e.id).steps)

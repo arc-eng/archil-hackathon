@@ -176,6 +176,34 @@ async def api_admin(req: Request) -> JSONResponse:
     return JSONResponse({"people": list(people.values()), "refused": refused})
 
 
+@server.custom_route("/api/admin/{key}/purge", methods=["POST"])
+async def api_purge(req: Request) -> JSONResponse:
+    """Remove one person's entries and sandbox (test runs, before the demo). Same key as the admin page."""
+    if req.path_params["key"] != admin_key():
+        return JSONResponse({"error": "not found"}, status_code=404)
+    body = (await req.json()) or {}
+    who, id_ = str(body.get("who", "")).strip(), str(body.get("id", "")).strip()
+    if id_:
+        try:
+            service().remove_entry(id_)
+        except KeyError:
+            return JSONResponse({"error": "not found"}, status_code=404)
+        except ValueError as e:
+            return JSONResponse({"error": str(e)}, status_code=409)
+        return JSONResponse({"removed": id_})
+    if not who:
+        return JSONResponse({"error": "say who or id"}, status_code=400)
+    import asyncio
+
+    import builder
+
+    try:
+        slots = await asyncio.to_thread(service().purge, who, builder.delete_employee_sandbox)
+    except Exception as e:  # noqa: BLE001
+        return JSONResponse({"error": str(e)[:300]}, status_code=409)
+    return JSONResponse({"removed": who, "cleared": slots})
+
+
 def _page() -> Response:
     index = WEB / "index.html"
     return FileResponse(index) if index.exists() else Response("page not built", status_code=503)

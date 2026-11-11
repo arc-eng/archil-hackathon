@@ -7,8 +7,11 @@ import json
 import threading
 import time
 import uuid
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from dataclasses import asdict, dataclass, field
 
+PACIFIC = ZoneInfo("America/Los_Angeles")  # the demo is in San Francisco (qa on #4: steps showed UTC)
 DISK_NAME = "golden-registry"
 KEY = "registry.json"
 SLOTS = [f"app-{i:02d}" for i in range(1, 11)]
@@ -96,8 +99,14 @@ class Registry:
     def step(self, id_: str, msg: str) -> None:
         with self.lock:
             a = self.apps[id_]
-            a.steps.append(f"{time.strftime('%H:%M:%S')} {msg}")
+            a.steps.append(f"{datetime.now(PACIFIC).strftime('%-I:%M:%S %p').lower()} {msg}")
             a.updated = time.time()
+            self._save()
+
+    def remove(self, ids: list[str]) -> None:
+        with self.lock:
+            for i in ids:
+                self.apps.pop(i, None)
             self._save()
 
     def get(self, id_: str) -> App | None:
