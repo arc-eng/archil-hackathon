@@ -96,3 +96,23 @@ uv run smoke_claude.py    # real Archil + Claude Code with the token: login, hea
 ```
 
 Free plan: 1 sandbox-hour a month, 30-minute sessions. `smoke_live.py` uses about a minute of it.
+
+## The golden-sandbox connector (tonight, arc-eng/hq#781)
+
+`connector.py` is the MCP server Marco adds to his Claude app. It listens on `$PORT` (default 8080) and serves:
+
+- `GET /health` → `{"ok": true}`
+- MCP (Streamable HTTP, stateless) at `/mcp/<CONNECTOR_PATH_SECRET>`, with three tools: `request_app(what, who)`,
+  `my_apps(who)`, `stop_app(name)`. Until tonight's build they answer "not built yet" and touch nothing.
+
+| Env | What |
+|---|---|
+| `CONNECTOR_PATH_SECRET` | the secret part of the address, 32+ letters, digits, `-` or `_`. Required: without it the server won't start. The service has no sign-in in front, so this is the guard. Never post it on GitHub. |
+| `ARCHIL_API_KEY`, `ARCHIL_REGION` | Archil (the SDK reads them from the environment) |
+| `CLAUDE_CODE_OAUTH_TOKEN` | Marco's Claude Code token, passed into sandbox commands' env, never written to disk |
+
+```bash
+CONNECTOR_PATH_SECRET=$(openssl rand -hex 24) uv run connector.py   # local
+```
+
+The `Dockerfile` runs the same thing on Cloud Run.
