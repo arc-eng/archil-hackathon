@@ -349,6 +349,12 @@ def test_how_page_serves_the_architecture_slide(client):
     assert r.status_code == 200 and "Nobody owns the apps." in r.text
 
 
+def test_bare_address_goes_to_the_slide(client):
+    r = client.get("/", follow_redirects=False)
+    assert r.status_code == 302 and r.headers["location"] == "/how"
+    assert "Nobody owns the apps." in client.get("/").text
+
+
 def test_purge_endpoint_needs_the_key(client, fx, monkeypatch):
     import builder
 
