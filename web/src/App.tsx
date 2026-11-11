@@ -66,7 +66,7 @@ function PublishGolden({ adminKey, latest, pending }: { adminKey: string; latest
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button className="bg-[#007A33] text-base text-white hover:bg-[#007A33]/90" disabled={state === "busy" || pending.length === 0}>
-              {state === "busy" ? "Publishing…" : `Publish golden v${next}`}
+              {state === "busy" ? "Publishing…" : "Publish new golden version"}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>

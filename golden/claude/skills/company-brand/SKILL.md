@@ -14,8 +14,29 @@ Every app the company's people build looks like it comes from the same company.
   page background `#FFFFFF`. No other accent colours.
 - **Font:** Inter for everything. Add
   `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">`
-  and set `font-family: Inter, system-ui, sans-serif` on `body`. Keep Pico CSS, and override its primary colour:
-  `:root { --pico-primary: #007A33; --pico-primary-hover: #00652a; --pico-font-family: Inter, system-ui, sans-serif; }`.
+  and set `font-family: Inter, system-ui, sans-serif` on `body`.
+- **Pico CSS stays, in brand green.** Pico sets its colours on `:root:not([data-theme=dark]), [data-theme=light]`,
+  which beats a plain `:root`, and its buttons use the `-background` and `-border` variables. So copy this block
+  exactly, after Pico's stylesheet:
+
+  ```css
+  :root:not([data-theme=dark]), [data-theme=light] {
+    --pico-font-family: Inter, system-ui, sans-serif;
+    --pico-primary: #007A33;
+    --pico-primary-background: #007A33;
+    --pico-primary-border: #007A33;
+    --pico-primary-underline: rgba(0, 122, 51, 0.5);
+    --pico-primary-hover: #00652a;
+    --pico-primary-hover-background: #00652a;
+    --pico-primary-hover-border: #00652a;
+    --pico-primary-hover-underline: #00652a;
+    --pico-primary-focus: rgba(0, 122, 51, 0.25);
+    --pico-primary-inverse: #FFFFFF;
+    --pico-border-radius: 8px;
+  }
+  ```
+
+  Buttons must come out green: no Pico blue anywhere on the page.
 - **Footer:** one small line, "Built with the Arcane Engineering golden sandbox", in secondary text.
 - Light mode only. Rounded corners 8 px. No gradients, no emoji icons.
 
