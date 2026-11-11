@@ -12,7 +12,8 @@ from dataclasses import asdict, dataclass, field
 DISK_NAME = "golden-registry"
 KEY = "registry.json"
 SLOTS = [f"app-{i:02d}" for i in range(1, 11)]
-STATUSES = ("queued", "building", "deploying", "live", "failed", "refused", "stopped")
+STATUSES = ("queued", "building", "deploying", "live", "stopping", "failed", "refused", "stopped")
+HOLDS_SLOT = ("queued", "building", "deploying", "live", "stopping")  # a slot is taken until its clear has finished
 
 
 @dataclass
@@ -121,5 +122,5 @@ class Registry:
         with self.lock:
             if keep:
                 return keep
-            taken = {a.slot for a in self.apps.values() if a.slot and a.status in ("live", "deploying")}
+            taken = {a.slot for a in self.apps.values() if a.slot and a.status in HOLDS_SLOT}
             return next((s for s in SLOTS if s not in taken), None)
