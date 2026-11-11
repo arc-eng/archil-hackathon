@@ -35,10 +35,62 @@ type App = {
   minutes: number;
   steps: string[];
   changes: number;
+  golden?: number;
   current_url?: string;
 };
 type Person = { who: string; apps: App[]; minutes: number };
-type Admin = { people: Person[]; refused: App[] };
+type Admin = { people: Person[]; refused: App[]; golden?: number | null; golden_pending?: string[] };
+
+function PublishGolden({ adminKey, latest, pending }: { adminKey: string; latest: number; pending: string[] }) {
+  const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const [msg, setMsg] = useState("");
+  const next = latest + 1;
+  const publish = async () => {
+    setState("busy");
+    setMsg("");
+    try {
+      const r = await fetch(`/api/admin/${adminKey}/publish`, { method: "POST" });
+      const b = (await r.json().catch(() => ({}))) as { published?: number; error?: string };
+      if (!r.ok) throw new Error(b.error || `The server answered ${r.status}.`);
+      setState("done");
+      setMsg(`Golden v${b.published} is published. Everyone's next request uses it.`);
+    } catch (e) {
+      setState("error");
+      setMsg(e instanceof Error ? e.message : String(e));
+    }
+  };
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <div className="flex items-center gap-3">
+        <Badge variant="secondary" className="h-6 px-2.5 text-sm">Golden v{latest}</Badge>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button className="bg-[#007A33] text-base text-white hover:bg-[#007A33]/90" disabled={state === "busy" || pending.length === 0}>
+              {state === "busy" ? "Publishing…" : "Publish new golden version"}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Publish golden v{next}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                What changes: {pending.join(", ") || "nothing"}. Every person gets it on their next request; v{latest} is kept.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={publish} className="bg-[#007A33] text-white hover:bg-[#007A33]/90">
+                Publish v{next}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+      <span className={state === "error" ? "text-[#B42318]" : "text-[#4B5057]"}>
+        {msg || (pending.length ? `Waiting to publish: ${pending.join(", ")}` : "Nothing waiting to publish")}
+      </span>
+    </div>
+  );
+}
 
 const POLL_MS = 5000;
 
@@ -142,9 +194,12 @@ function AdminView({ adminKey }: { adminKey: string }) {
   return (
     <div className="min-h-screen bg-white text-[#15171A] text-base">
       <div className="mx-auto max-w-7xl px-10 py-10">
-        <div className="mb-6 flex items-baseline justify-between">
-          <h1 className="text-3xl font-semibold">Apps</h1>
-          <span className="text-[#4B5057]">{err ? `⚠ ${err}` : "Updates every 5 s"}</span>
+        <div className="mb-6 flex items-start justify-between">
+          <div className="flex items-baseline gap-4">
+            <h1 className="text-3xl font-semibold">Apps</h1>
+            <span className="text-[#4B5057]">{err ? `⚠ ${err}` : "Updates every 5 s"}</span>
+          </div>
+          {data && data.golden != null && <PublishGolden adminKey={adminKey} latest={data.golden} pending={data.golden_pending ?? []} />}
         </div>
         {!data ? (
           <p className="text-[#4B5057]">{err || "Loading…"}</p>
@@ -170,6 +225,7 @@ function AdminView({ adminKey }: { adminKey: string }) {
                       <TableHead>Owner</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Minutes</TableHead>
+                      <TableHead>Golden</TableHead>
                       <TableHead>Updated</TableHead>
                       <TableHead>Link</TableHead>
                     </TableRow>
@@ -177,7 +233,7 @@ function AdminView({ adminKey }: { adminKey: string }) {
                   <TableBody>
                     {apps.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={6} className="py-6 text-[#4B5057]">No apps yet.</TableCell>
+                        <TableCell colSpan={7} className="py-6 text-[#4B5057]">No apps yet.</TableCell>
                       </TableRow>
                     )}
                     {apps.map((a) => (
@@ -189,6 +245,7 @@ function AdminView({ adminKey }: { adminKey: string }) {
                         <TableCell>{a.who}</TableCell>
                         <TableCell><StatusBadge status={a.status} /></TableCell>
                         <TableCell className="text-right tabular-nums">{a.minutes}</TableCell>
+                        <TableCell className="text-[#4B5057]">{a.golden ? `v${a.golden}` : "—"}</TableCell>
                         <TableCell className="text-[#4B5057]">{ago(a.updated)}</TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           {a.status === "live" && a.url ? <OpenLink url={a.url} /> : null}
@@ -334,6 +391,8 @@ function DetailView({ adminKey, id }: { adminKey: string; id: string }) {
                   <dd>{a.minutes}</dd>
                   <dt className="text-[#4B5057]">Created</dt>
                   <dd>{when(a.created)}</dd>
+                  <dt className="text-[#4B5057]">Golden</dt>
+                  <dd>{a.golden ? `v${a.golden}` : "—"}</dd>
                   <dt className="text-[#4B5057]">Updated</dt>
                   <dd>{ago(a.updated)}</dd>
                 </dl>
