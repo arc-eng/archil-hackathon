@@ -176,11 +176,11 @@
   });
   const qs = ["Where are all of our tokens going?", "Which apps are running right now?", "Who built the one that emails customers?",
     "Why did Maya and Diego both build a client tracker?", "Where is our customer data?", "Diego, who can see the client data in your app?",
-    "What happens to Diego's app if he leaves?"];
+    "Does any of these apps follow our guidelines?", "What happens to Diego's app if he leaves?"];
   // With: Sam's outcomes, each one answering the question at the same place in the list.
   const as = ["I can see where every token goes.", "I can see every app that's running.", "Every app shows who built it.",
     "I see what exists before anyone builds it twice.", "Customer data stays in our cloud.", "Every app follows our data rules from day one.",
-    "If Diego leaves, his app stays."];
+    "Every app is built on our house rules.", "If Diego leaves, his app stays."];
   // One counter for both bubbles, so switching sides mid-question shows its answer.
   let qi = 0; const qel = document.getElementById("q"), ael = document.getElementById("a");
   setInterval(() => { qel.style.opacity = ael.style.opacity = 0;
