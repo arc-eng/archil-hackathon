@@ -115,7 +115,7 @@ def request_app(
     if missing:
         return "Not started: the spec needs " + "; ".join(missing) + ". Ask the person, play the spec back, then call request_app again."
     if e.status == "refused":
-        return f"Refused, nothing was built. {e.rule} Tell {e.who} plainly; it's on the admin page. Status: {status_url(e.id)}"
+        return f"Refused, nothing was built. {e.rule} Tell {e.who} plainly; the status link shows why: {status_url(e.id)}"
     what = f"Changing '{e.app}'" if change_of else f"Building '{e.app}'"
     return f"{what} for {e.who} in their own sandbox. Status page (flips to live with the app's link): {status_url(e.id)}"
 
