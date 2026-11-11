@@ -63,28 +63,18 @@
   .step b { display: block; font-size: 1.75vw; font-weight: 700; } .step span { display: block; font-size: 1.3vw; color: var(--text-2); }
 
   .av { width: 3.4vw; height: 3.4vw; border-radius: 50%; object-fit: cover; flex: none; }
-  .admin .av { width: 3.8vw; height: 3.8vw; }
 
-  /* Without: Sam and his questions */
-  .sam { margin-top: auto; display: flex; align-items: center; gap: 1.6vw; }
+  /* Sam, the admin: centred in the space under the lanes, one bubble cycling (questions without, outcomes with) */
+  .sam { flex: 1; display: flex; align-items: center; justify-content: center; gap: 1.6vw; }
   .sam img { width: 7vw; height: 7vw; border-radius: 50%; object-fit: cover; flex: none; border: 0.2vw solid var(--red); }
+  .with .sam img { border-color: var(--green); }
   .who-name b { display: block; font-size: 2vw; font-weight: 750; } .who-name span { font-size: 1.4vw; color: var(--text-2); }
   .bubble { position: relative; margin-left: 1.4vw; background: var(--red-soft); border: 0.15vw solid var(--red); border-radius: 1.4vw;
     padding: 1.3vw 2vw; min-width: 46vw; }
   .bubble::before { content: ""; position: absolute; left: -1.05vw; top: 50%; width: 1.8vw; height: 1.8vw; background: var(--red-soft);
     border-left: 0.15vw solid var(--red); border-bottom: 0.15vw solid var(--red); transform: translateY(-50%) rotate(45deg); }
-  #q { display: block; font-size: 2.3vw; font-weight: 700; letter-spacing: -0.01em; transition: opacity .6s ease; }
-
-  /* The admin: one line, three marks */
-  .admin { margin-top: auto; display: flex; align-items: center; gap: 2vw; border-radius: 0.9vw; padding: 1.3vw 2vw; }
-  .without .admin { border: 0.2vw dashed var(--red); }
-  .with .admin { border: 0.2vw solid var(--green); background: var(--green-soft); }
-  .admin .who { font-size: 1.9vw; font-weight: 750; }
-  .without .admin .who svg { color: var(--red); } .with .admin .who svg { color: var(--green); }
-  .mark { display: inline-flex; align-items: center; gap: 0.6vw; font-size: 1.7vw; font-weight: 650; }
-  .mark i { font-style: normal; width: 2vw; height: 2vw; border-radius: 50%; color: #fff; font-size: 1.2vw; font-weight: 800;
-    display: inline-flex; align-items: center; justify-content: center; }
-  .without .mark i { background: var(--red); } .with .mark i { background: var(--green); }
+  .with .bubble, .with .bubble::before { background: var(--green-soft); border-color: var(--green); }
+  .line { display: block; font-size: 2.3vw; font-weight: 700; letter-spacing: -0.01em; transition: opacity .6s ease; }
 
   footer { display: flex; justify-content: space-between; align-items: baseline; }
   footer b { font-size: 1.6vw; font-weight: 650; }
@@ -126,8 +116,8 @@
     </div>
     <div class="sam">
       <img src="/personas/sam.png" alt="">
-      <div class="who-name"><b>Sam</b><span>owner</span></div>
-      <div class="bubble"><span id="q">Where are all of our tokens going?</span></div>
+      <div class="who-name"><b>Sam</b><span>Admin</span></div>
+      <div class="bubble"><span class="line" id="q">Where are all of our tokens going?</span></div>
     </div>
   </section>
 
@@ -162,11 +152,10 @@
         </div>
       </div>
     </div>
-    <div class="admin">
-      <div class="who"><img class="av" src="/personas/sam.png" alt="">Sam, admin</div>
-      <span class="mark"><i>✓</i>Every app</span>
-      <span class="mark"><i>✓</i>Every owner</span>
-      <span class="mark"><i>✓</i>Stop in one click</span>
+    <div class="sam">
+      <img src="/personas/sam.png" alt="">
+      <div class="who-name"><b>Sam</b><span>Admin</span></div>
+      <div class="bubble"><span class="line" id="a">I can see where every token goes.</span></div>
     </div>
   </section>
 
@@ -185,8 +174,13 @@
   });
   const qs = ["Where are all of our tokens going?", "Which apps are running right now?", "Who built the one that emails customers?",
     "Where is our customer data?", "Whose card is paying for this?", "What happens to Diego's app if he leaves?", "How do I switch that app off?"];
-  let qi = 0; const qel = document.getElementById("q");
-  setInterval(() => { qel.style.opacity = 0; setTimeout(() => { qi = (qi + 1) % qs.length; qel.textContent = qs[qi]; qel.style.opacity = 1; }, 600); }, 3500);
+  // With: Sam's outcomes, each one answering the question at the same place in the list.
+  const as = ["I can see where every token goes.", "I can see every app that's running.", "Every app shows who built it.",
+    "Customer data stays in our cloud.", "It's all on one company bill.", "If Diego leaves, his app stays.", "I can switch any app off in one click."];
+  // One counter for both bubbles, so switching sides mid-question shows its answer.
+  let qi = 0; const qel = document.getElementById("q"), ael = document.getElementById("a");
+  setInterval(() => { qel.style.opacity = ael.style.opacity = 0;
+    setTimeout(() => { qi = (qi + 1) % qs.length; qel.textContent = qs[qi]; ael.textContent = as[qi]; qel.style.opacity = ael.style.opacity = 1; }, 600); }, 3500);
 </script>
 </body>
 </html>
