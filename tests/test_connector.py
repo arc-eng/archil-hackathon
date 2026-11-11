@@ -337,6 +337,11 @@ def test_pages_serve_the_built_page(client, fx):
     assert client.get(f"/assets/{asset.name}").status_code == 200
     assert client.get("/assets/..%2F..%2Fconnector.py").status_code == 404
 
+def test_how_page_serves_the_architecture_slide(client):
+    r = client.get("/how")
+    assert r.status_code == 200 and "Nobody owns them." in r.text
+
+
 def test_purge_endpoint_needs_the_key(client, fx, monkeypatch):
     import builder
 

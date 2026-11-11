@@ -238,6 +238,13 @@ async def admin_page(req: Request) -> Response:
     return _page() if req.path_params["key"] == admin_key() else Response("not found", status_code=404)
 
 
+@server.custom_route("/how", methods=["GET"])
+async def how_page(_: Request) -> Response:
+    """The architecture slide for the demo: who owns the apps (arc-eng/hq#782)."""
+    f = WEB / "how.html"
+    return FileResponse(f) if f.exists() else Response("page not built", status_code=503)
+
+
 @server.custom_route("/assets/{file}", methods=["GET"])
 async def assets(req: Request) -> Response:
     f = (WEB / "assets" / req.path_params["file"]).resolve()
