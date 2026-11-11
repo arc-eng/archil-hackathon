@@ -77,6 +77,7 @@
   .line { display: block; font-size: 2.3vw; font-weight: 700; letter-spacing: -0.01em; transition: opacity .6s ease; }
 
   /* The happy-path video: a button top right, playing in a full-screen overlay (Marco, arc-eng/hq#782) */
+  .watch[hidden] { display: none; }
   .watch { position: absolute; top: 2.75vw; right: 5vw; display: inline-flex; align-items: center; gap: 0.7vw; font: inherit; font-size: 1.3vw;
     font-weight: 700; color: var(--text); background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 0.7vw 1.5vw; cursor: pointer; }
   .watch:hover { border-color: var(--text); }
@@ -102,7 +103,7 @@
   <symbol id="claude" viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15.5l-1.8-4.7L5.5 9l4.7-1.3z"/><path d="M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></symbol>
 </svg>
 <main>
-  <button class="watch" id="watch" type="button"><i>▶</i>Watch the 1-minute video</button>
+  <button class="watch" id="watch" type="button" hidden><i>▶</i>Watch the 1-minute video</button>
   <div class="switch" role="tablist" aria-label="Show">
     <button data-to="without" role="tab">Without Golden Sandbox</button>
     <button data-to="with" role="tab">With Golden Sandbox</button>
@@ -178,7 +179,7 @@
 </main>
 <div class="player" id="player" role="dialog" aria-label="Golden Sandbox video">
   <button class="close" id="close" type="button">Close ✕</button>
-  <video id="vid" src="/video.mp4" controls playsinline preload="none"></video>
+  <video id="vid" src="/video.mp4" controls playsinline preload="metadata"></video>
 </div>
 <script>
   const set = (m) => { document.body.dataset.mode = m; history.replaceState(null, "", "?" + m); };
@@ -189,7 +190,11 @@
   const player = document.getElementById("player"), vid = document.getElementById("vid");
   const openVideo = () => { player.classList.add("open"); vid.currentTime = 0; vid.play().catch(() => {}); };
   const closeVideo = () => { vid.pause(); player.classList.remove("open"); };
-  document.getElementById("watch").addEventListener("click", openVideo);
+  // The button only shows once the video has loaded, so the slide never offers an empty player (qa on #42).
+  const watch = document.getElementById("watch");
+  vid.addEventListener("loadedmetadata", () => { watch.hidden = false; });
+  if (vid.readyState >= 1) watch.hidden = false;
+  watch.addEventListener("click", openVideo);
   document.getElementById("close").addEventListener("click", closeVideo);
   player.addEventListener("click", (e) => { if (e.target === player) closeVideo(); });
   addEventListener("keydown", (e) => {
