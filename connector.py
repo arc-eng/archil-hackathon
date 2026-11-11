@@ -144,6 +144,43 @@ def _public(a) -> dict:
     return d
 
 
+GOLDEN_URL = "https://github.com/arc-eng/archil-hackathon/tree/main/golden"
+ARCHIL_CONSOLE = "https://console.archil.com"
+
+
+def jump_links() -> list[dict]:
+    """The admin page's quick-jump buttons (Marco, arc-eng/hq#782). Console links only: each opens in that console's own
+    sign-in, and nothing secret goes in them."""
+    from deploy import PROJECT, REGION
+
+    gcp = "https://console.cloud.google.com"
+    logs_q = 'resource.type="cloud_run_revision"\nresource.labels.service_name=~"^app-"'
+    from urllib.parse import quote
+
+    return [
+        {"label": "Golden image", "url": GOLDEN_URL},
+        {"label": "App servers", "url": f"{gcp}/run?project={PROJECT}"},
+        {"label": "Deploys", "url": f"{gcp}/cloud-build/builds;region={REGION}?project={PROJECT}"},
+        {"label": "Logs", "url": f"{gcp}/logs/query;query={quote(logs_q, safe='')}?project={PROJECT}"},
+        {"label": "Sandboxes", "url": ARCHIL_CONSOLE},
+    ]
+
+
+def app_links(a) -> list[dict]:
+    """Per app on its details page: its Cloud Run service, its last build, its sandbox."""
+    from deploy import PROJECT, REGION
+
+    gcp = "https://console.cloud.google.com"
+    out = []
+    if a.slot:
+        out.append({"label": f"Cloud Run service ({a.slot})", "url": f"{gcp}/run/detail/{REGION}/{a.slot}/revisions?project={PROJECT}"})
+    if a.build:
+        out.append({"label": "Last build", "url": f"{gcp}/cloud-build/builds;region={REGION}/{a.build}?project={PROJECT}"})
+    if a.sandbox:
+        out.append({"label": f"Sandbox ({a.sandbox})", "url": ARCHIL_CONSOLE})
+    return out
+
+
 @server.custom_route("/health", methods=["GET"])
 async def health(_: Request) -> JSONResponse:
     return JSONResponse({"ok": True})
@@ -184,7 +221,9 @@ async def api_admin(req: Request) -> JSONResponse:
         waiting = golden.pending()
     except Exception:  # noqa: BLE001
         pass
-    return JSONResponse({"people": list(people.values()), "refused": refused, "golden": latest, "golden_pending": waiting})
+    return JSONResponse(
+        {"people": list(people.values()), "refused": refused, "golden": latest, "golden_pending": waiting, "links": jump_links()}
+    )
 
 
 @server.custom_route("/api/admin/{key}/publish", methods=["POST"])
@@ -215,6 +254,7 @@ async def api_admin_app(req: Request) -> JSONResponse:
     d = _public(a)
     d["spec"] = a.spec
     d["versions"] = [_public(x) for x in service().reg.of(a.who) if x.app == a.app]
+    d["links"] = app_links(a)
     return JSONResponse(d)
 
 

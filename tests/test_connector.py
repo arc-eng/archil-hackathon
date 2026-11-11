@@ -50,6 +50,8 @@ class Fakes:
         if self.deploy_error:
             raise self.deploy_error
         self.deployed.append((src, slot))
+        if getattr(self, "deploy_build", None):  # the real deploy also returns the Cloud Build id
+            return f"https://{slot}.example", self.deploy_build
         return f"https://{slot}.example"
 
     def clear(self, slot):
@@ -400,3 +402,33 @@ def test_details_stop_needs_the_key_and_a_live_app(client, fx):
     drain(fx.svc)
     assert fx.cleared == ["app-01"] and fx.svc.reg.get(e.id).status == "stopped"
     assert client.post(f"/api/admin/{k}/app/{e.id}/stop").status_code == 409
+
+
+# --- quick-jump links (Marco, arc-eng/hq#782) ------------------------------------------------------------------------
+def test_admin_api_has_the_jump_links(client, fx):
+    d = client.get(f"/api/admin/{connector.admin_key()}").json()
+    links = {l["label"]: l["url"] for l in d["links"]}
+    assert list(links) == ["Golden image", "App servers", "Deploys", "Logs", "Sandboxes"]
+    assert links["Golden image"].endswith("/archil-hackathon/tree/main/golden")
+    assert all(u.startswith("https://") for u in links.values())
+    # nothing secret in a link: not the admin key, not the MCP path
+    for u in links.values():
+        assert connector.admin_key() not in u and "/mcp/" not in u
+
+
+def test_details_api_links_its_service_build_and_sandbox(client, fx):
+    fx.deploy_build = "b-123"
+    e, _ = fx.svc.request("Dana", GOOD)
+    drain(fx.svc)
+    assert fx.svc.reg.get(e.id).build == "b-123"
+    d = client.get(f"/api/admin/{connector.admin_key()}/app/{e.id}").json()
+    links = {l["label"]: l["url"] for l in d["links"]}
+    assert links["Cloud Run service (app-01)"].split("?")[0].endswith("/run/detail/us-west1/app-01/revisions")
+    assert "/cloud-build/builds;region=us-west1/b-123?" in links["Last build"]
+    assert "Sandbox (emp-dana)" in links
+
+
+def test_details_api_leaves_out_what_a_refused_request_lacks(client, fx):
+    e, _ = fx.svc.request("Sam", {**GOOD, "data": "to my personal Dropbox"})
+    d = client.get(f"/api/admin/{connector.admin_key()}/app/{e.id}").json()
+    assert d["links"] == []  # no slot, no build, no sandbox: no dead buttons
