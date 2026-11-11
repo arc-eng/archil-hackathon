@@ -339,6 +339,11 @@ def test_pages_serve_the_built_page(client, fx):
     assert client.get(f"/assets/{asset.name}").status_code == 200
     assert client.get("/assets/..%2F..%2Fconnector.py").status_code == 404
 
+def test_architecture_page_serves_the_diagram(client):
+    r = client.get("/architecture")
+    assert r.status_code == 200 and "Registry disk" in r.text
+
+
 def test_how_page_serves_the_architecture_slide(client):
     r = client.get("/how")
     assert r.status_code == 200 and "Nobody owns the apps." in r.text
