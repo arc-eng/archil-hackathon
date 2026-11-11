@@ -70,7 +70,7 @@
   .with .sam img { border-color: var(--green); }
   .who-name b { display: block; font-size: 2vw; font-weight: 750; } .who-name span { font-size: 1.4vw; color: var(--text-2); }
   .bubble { position: relative; margin-left: 1.4vw; background: var(--red-soft); border: 0.15vw solid var(--red); border-radius: 1.4vw;
-    padding: 1.3vw 2vw; min-width: 46vw; }
+    padding: 1.3vw 2vw; min-width: 58vw; }
   .bubble::before { content: ""; position: absolute; left: -1.05vw; top: 50%; width: 1.8vw; height: 1.8vw; background: var(--red-soft);
     border-left: 0.15vw solid var(--red); border-bottom: 0.15vw solid var(--red); transform: translateY(-50%) rotate(45deg); }
   .with .bubble, .with .bubble::before { background: var(--green-soft); border-color: var(--green); }
@@ -175,10 +175,12 @@
     }
   });
   const qs = ["Where are all of our tokens going?", "Which apps are running right now?", "Who built the one that emails customers?",
-    "Where is our customer data?", "Whose card is paying for this?", "What happens to Diego's app if he leaves?", "How do I switch that app off?"];
+    "Why did Maya and Diego both build a client tracker?", "Where is our customer data?", "Diego, who can see the client data in your app?",
+    "What happens to Diego's app if he leaves?"];
   // With: Sam's outcomes, each one answering the question at the same place in the list.
   const as = ["I can see where every token goes.", "I can see every app that's running.", "Every app shows who built it.",
-    "Customer data stays in our cloud.", "It's all on one company bill.", "If Diego leaves, his app stays.", "I can switch any app off in one click."];
+    "I see what exists before anyone builds it twice.", "Customer data stays in our cloud.", "Every app follows our data rules from day one.",
+    "If Diego leaves, his app stays."];
   // One counter for both bubbles, so switching sides mid-question shows its answer.
   let qi = 0; const qel = document.getElementById("q"), ael = document.getElementById("a");
   setInterval(() => { qel.style.opacity = ael.style.opacity = 0;
