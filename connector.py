@@ -28,7 +28,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from mcp.server.mcpserver import MCPServer
 from starlette.requests import Request
-from starlette.responses import FileResponse, JSONResponse, Response
+from starlette.responses import FileResponse, JSONResponse, RedirectResponse, Response
 
 MIN_SECRET = 32
 PUBLIC_URL = os.environ.get("PUBLIC_URL", "https://golden-sandbox-42301619537.us-west1.run.app").rstrip("/")
@@ -356,6 +356,12 @@ async def architecture_page(_: Request) -> Response:
     """The system diagram for the demo, with Archil at the centre (arc-eng/hq#782)."""
     f = WEB / "architecture.html"
     return FileResponse(f) if f.exists() else Response("page not built", status_code=503)
+
+
+@server.custom_route("/", methods=["GET"])
+async def root(_: Request) -> Response:
+    """The bare address goes to the slide (devops: Marco opened / at 04:25 and got a 404). 302, so nothing is cached."""
+    return RedirectResponse("/how", status_code=302)
 
 
 @server.custom_route("/how", methods=["GET"])
