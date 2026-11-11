@@ -79,6 +79,8 @@
   footer { display: flex; justify-content: space-between; align-items: baseline; }
   footer b { font-size: 1.6vw; font-weight: 650; }
   footer small { font-size: 1vw; color: #8A8F96; }
+  footer .right { display: flex; align-items: baseline; gap: 2vw; }
+  .arch-link { font-size: 1.5vw; font-weight: 700; color: var(--green); text-decoration: underline; text-underline-offset: 0.25vw; }
 </style>
 </head>
 <body data-mode="without">
@@ -159,7 +161,7 @@
     </div>
   </section>
 
-  <footer><b>People stay creative. The company keeps control.</b><small>Space or ← → to switch</small></footer>
+  <footer><b>People stay creative. The company keeps control.</b><span class="right"><a class="with arch-link" href="/architecture">See the architecture →</a><small>Space or ← → to switch</small></span></footer>
 </main>
 <script>
   const set = (m) => { document.body.dataset.mode = m; history.replaceState(null, "", "?" + m); };
