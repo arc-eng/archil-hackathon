@@ -13,20 +13,20 @@
   html, body { height: 100%; background: #fff; color: var(--text);
     font-family: "Inter Variable", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
   /* One 16:9 slide that scales with the window: 1vw = 1/100 of the width. */
-  main { width: 100vw; min-height: 100vh; padding: 2vw 4vw 2.2vw; display: flex; flex-direction: column; gap: 1.6vw; }
+  main { width: 100vw; min-height: 100vh; padding: 2vw 4vw 2.2vw; display: flex; flex-direction: column; gap: 1.3vw; }
 
   /* The switch */
   .switch { align-self: center; display: inline-flex; padding: 0.35vw; border-radius: 999px; background: #EDEFF1;
     border: 1px solid var(--line); }
   .switch button { font: inherit; font-size: 1.6vw; font-weight: 700; border: 0; cursor: pointer; background: transparent;
-    color: var(--text-2); padding: 0.75vw 2.4vw; border-radius: 999px; transition: background .2s, color .2s; }
+    color: var(--text-2); padding: 0.55vw 2.4vw; border-radius: 999px; transition: background .2s, color .2s; }
   body[data-mode="without"] .switch [data-to="without"] { background: var(--red); color: #fff; }
   body[data-mode="with"] .switch [data-to="with"] { background: var(--green); color: #fff; }
   body[data-mode="without"] .with, body[data-mode="with"] .without { display: none; }
-  .view { display: flex; flex-direction: column; gap: 1.6vw; animation: in .35s ease; }
+  .view { display: flex; flex-direction: column; gap: 1.3vw; animation: in .35s ease; }
   @keyframes in { from { opacity: 0; transform: translateY(0.4vw); } to { opacity: 1; transform: none; } }
 
-  .band { border-radius: 0.5vw; padding: 1.6vw 2.4vw; }
+  .band { border-radius: 0.5vw; padding: 1.2vw 2.4vw; }
   .band h1 { font-size: 3vw; line-height: 1.15; letter-spacing: -0.02em; font-weight: 750; }
   .band ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.6vw 3vw; margin-top: 1vw; }
   .band li { font-size: 1.4vw; color: var(--text-2); display: flex; align-items: center; gap: 0.7vw; }
@@ -51,8 +51,8 @@
 
   /* With */
   .flow { display: flex; align-items: flex-start; }
-  .flow > .box, .flow > .who, .flow > .arrow { margin-top: 3.45vw; height: 15.5vw; }
-  .with .box { min-height: 15.5vw; }
+  .flow > .box, .flow > .who, .flow > .arrow { margin-top: 3.45vw; height: 14.6vw; }
+  .with .box { min-height: 14.6vw; }
   .owned { flex: 4.6; display: flex; flex-direction: column; gap: 0.8vw;
     border: 0.18vw solid var(--green); border-radius: 0.8vw; padding: 1vw 1.1vw 1.1vw; background: #fff; }
   .owned > .label { font-size: 1.3vw; font-weight: 700; color: var(--green); }
@@ -64,7 +64,7 @@
 
   /* Without: three people, three tools, three places nobody controls */
   .scatter { display: block; }
-  .lanes { display: flex; flex-direction: column; gap: 1vw; }
+  .lanes { display: flex; flex-direction: column; gap: 0.8vw; }
   .lane { display: flex; align-items: stretch; }
   .lane .who { flex-direction: row; justify-content: flex-start; width: 11vw; gap: 0.8vw; }
   .lane .who svg { width: 2vw; height: 2vw; }
@@ -82,7 +82,7 @@
   .blind span { font-size: 1.2vw; color: var(--text-2); line-height: 1.35; }
 
   .persona { display: grid; grid-template-columns: 20vw 1fr; gap: 2vw; align-items: center;
-    border-radius: 0.8vw; padding: 1.3vw 1.8vw; }
+    border-radius: 0.8vw; padding: 1vw 1.8vw; }
   .persona.bad { border: 0.18vw dashed var(--red); background: #fff; }
   .persona.good { border: 0.18vw solid var(--green); background: var(--green-soft); }
   .persona .me { display: flex; align-items: center; gap: 1vw; }
@@ -96,7 +96,7 @@
   .q i { font-style: normal; width: 1.6vw; height: 1.6vw; border-radius: 50%; color: #fff; font-size: 1.05vw;
     display: inline-flex; align-items: center; justify-content: center; font-weight: 800; }
   .bad .q i { background: var(--red); } .good .q i { background: var(--green); }
-  .persona p { font-size: 1.3vw; color: var(--text-2); margin-top: 0.8vw; line-height: 1.4; }
+  .persona p { font-size: 1.3vw; color: var(--text-2); margin-top: 0.5vw; line-height: 1.4; }
   .persona p b { color: var(--text); }
   footer { margin-top: auto; display: flex; justify-content: space-between; align-items: baseline; }
   footer b { font-size: 1.6vw; font-weight: 650; }
@@ -215,7 +215,7 @@
         <div class="qs">
           <span class="q"><i>✓</i>Every app on one page</span>
           <span class="q"><i>✓</i>Each with its owner</span>
-          <span class="q"><i>✓</i>Data stays on company systems</span>
+          <span class="q"><i>✓</i>No company data sent outside</span>
           <span class="q"><i>✓</i>Stop any app in one click</span>
         </div>
         <p><b>Sets the house rules once, and every employee's sandbox follows them.</b> Refused requests show up with the rule that stopped them.</p>
