@@ -516,6 +516,19 @@ def test_personas_route_serves_only_files_in_the_folder(client):
     assert client.get("/personas/nope.png").status_code == 404
 
 
+def test_admin_api_hides_the_gym_apps_without_touching_them(client, fx, monkeypatch):
+    monkeypatch.setattr(connector, "HIDDEN_APPS", {"habit-check-in-log"})
+    hidden, _ = fx.svc.request("Diego", {**GOOD, "title": "Habit check-in log"})
+    shown, _ = fx.svc.request("Diego", {**GOOD, "title": "Deal-flow tracker"})
+    drain(fx.svc)
+    assert hidden.app == "habit-check-in-log"
+    d = client.get(f"/api/admin/{connector.admin_key()}").json()
+    apps = [a["app"] for p in d["people"] for a in p["apps"]]
+    assert apps == ["deal-flow-tracker"]
+    assert fx.svc.reg.get(hidden.id).status == "live"  # still there, only not listed
+    monkeypatch.setattr(connector, "HIDDEN_APPS", set())
+    d = client.get(f"/api/admin/{connector.admin_key()}").json()
+    assert sorted(a["app"] for p in d["people"] for a in p["apps"]) == ["deal-flow-tracker", "habit-check-in-log"]
 def test_monitoring_pages_need_the_key_and_a_known_page(client):
     k = connector.admin_key()
     for page in ("spend", "usage", "health"):

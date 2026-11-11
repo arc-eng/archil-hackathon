@@ -589,7 +589,12 @@ function seed(key: string, n: number) {
   return ((h >>> 0) % 10000) / 10000;
 }
 
-type Figures = { a: App; claude: number; cloud: number; tokens: number; users: number; lastOpenDays: number; uptime: number; errors: number; live: boolean };
+type Figures = { a: App; claude: number; cloud: number; tokens: number; users: number; lastOpenDays: number; uptime: number; errors: number; errorWhy: string; live: boolean };
+
+// po on #51: one app with a believable problem, everything else healthy (Marco's own apps clean)
+const HEALTH_ISSUES: Record<string, { uptime: number; errors: number; why: string }> = {
+  "deal-flow-tracker": { uptime: 99.1, errors: 4, why: "Timeouts loading the pipeline page" },
+};
 
 function figures(a: App): Figures {
   const k = `${a.who.trim().toLowerCase()}/${a.app}`;
@@ -599,11 +604,12 @@ function figures(a: App): Figures {
   const ageDays = Math.max(0, (Date.now() / 1000 - a.created) / 86400);
   const fresh = ageDays < 1;
   const users = !live ? 0 : fresh ? 1 + Math.floor(seed(k, 3) * 2) : 3 + Math.floor(seed(k, 3) * 12);
-  const lastOpenDays = !live ? 9 + Math.floor(seed(k, 4) * 12) : fresh ? 0 : Math.floor(seed(k, 4) * 2);
-  // a brand-new app has had no time to fail: 100% and no errors
-  const uptime = !live ? 0 : fresh ? 100 : 99.5 + Math.round(seed(k, 5) * 50) / 100;
-  const errors = !live || fresh ? 0 : seed(k, 6) > 0.75 ? 3 + Math.floor(seed(k, 7) * 9) : Math.floor(seed(k, 7) * 2);
-  return { a, claude, cloud, tokens: (claude / PER_M_TOKENS) * 1e6, users, lastOpenDays, uptime, errors, live };
+  // only a stopped app gets the "not opened lately" figure, and never longer ago than the app is old (qa on #51)
+  const lastOpenDays =
+    a.status === "stopped" ? Math.min(9 + Math.floor(seed(k, 4) * 12), Math.floor(ageDays)) : live && !fresh ? Math.floor(seed(k, 4) * 2) : 0;
+  const issue = live ? HEALTH_ISSUES[a.app] : undefined;
+  const uptime = !live ? 0 : issue ? issue.uptime : fresh ? 100 : 99.9 + Math.round(seed(k, 5) * 9) / 100;
+  return { a, claude, cloud, tokens: (claude / PER_M_TOKENS) * 1e6, users, lastOpenDays, uptime, errors: issue?.errors ?? 0, errorWhy: issue?.why ?? "", live };
 }
 
 const usd = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
@@ -729,19 +735,24 @@ function MonitoringView({ adminKey, page }: { adminKey: string; page: string }) 
         </TableHeader>
         <TableBody>
           {rows.map((f) => {
-            const idle = f.lastOpenDays >= 7;
+            const notYet = !f.live && f.a.status !== "stopped";
+            const idle = f.a.status === "stopped" && f.lastOpenDays >= 7;
             return (
               <TableRow key={f.a.id} className="cursor-pointer hover:bg-[#F7F8F9]" onClick={() => open(f.a)}>
                 <TableCell className="font-medium">{f.a.title}</TableCell>
                 <TableCell><Owner who={f.a.who} /></TableCell>
-                <TableCell className="text-right tabular-nums">{f.users} of 50</TableCell>
+                <TableCell className="text-right tabular-nums">{notYet ? "—" : `${f.users} of 50`}</TableCell>
                 <TableCell>
-                  {idle ? (
+                  {notYet ? (
+                    <span className="text-[#4B5057]">Not live yet</span>
+                  ) : idle ? (
                     <Badge className="h-6 px-2.5 text-sm bg-[#FEF3F2] text-[#B42318]">Not opened in {f.lastOpenDays} days</Badge>
                   ) : f.lastOpenDays === 0 ? (
                     "Today"
-                  ) : (
+                  ) : f.lastOpenDays === 1 ? (
                     "Yesterday"
+                  ) : (
+                    `${f.lastOpenDays} days ago`
                   )}
                 </TableCell>
               </TableRow>
@@ -760,6 +771,7 @@ function MonitoringView({ adminKey, page }: { adminKey: string; page: string }) 
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Uptime (30 days)</TableHead>
             <TableHead className="text-right">Errors (24 h)</TableHead>
+            <TableHead>Last error</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -770,6 +782,7 @@ function MonitoringView({ adminKey, page }: { adminKey: string; page: string }) 
               <TableCell><StatusBadge status={f.a.status} /></TableCell>
               <TableCell className="text-right tabular-nums">{f.live ? `${f.uptime.toFixed(2)}%` : "—"}</TableCell>
               <TableCell className={`text-right tabular-nums ${f.errors >= 3 ? "font-medium text-[#B42318]" : ""}`}>{f.live ? f.errors : "—"}</TableCell>
+              <TableCell className={f.errorWhy ? "text-[#B42318]" : "text-[#4B5057]"}>{f.errorWhy || "—"}</TableCell>
             </TableRow>
           ))}
         </TableBody>
