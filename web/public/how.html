@@ -76,6 +76,18 @@
   .with .bubble, .with .bubble::before { background: var(--green-soft); border-color: var(--green); }
   .line { display: block; font-size: 2.3vw; font-weight: 700; letter-spacing: -0.01em; transition: opacity .6s ease; }
 
+  /* The happy-path video: a button top right, playing in a full-screen overlay (Marco, arc-eng/hq#782) */
+  .watch { position: absolute; top: 2.75vw; right: 5vw; display: inline-flex; align-items: center; gap: 0.7vw; font: inherit; font-size: 1.3vw;
+    font-weight: 700; color: var(--text); background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 0.7vw 1.5vw; cursor: pointer; }
+  .watch:hover { border-color: var(--text); }
+  .watch i { font-style: normal; display: inline-flex; align-items: center; justify-content: center; width: 1.9vw; height: 1.9vw; border-radius: 50%;
+    background: var(--text); color: #fff; font-size: 0.85vw; padding-left: 0.15vw; }
+  .player { position: fixed; inset: 0; z-index: 10; background: rgba(10, 11, 12, 0.92); display: none; align-items: center; justify-content: center; }
+  .player.open { display: flex; animation: in .25s ease; }
+  .player video { width: 84vw; max-height: 84vh; aspect-ratio: 16 / 9; background: #000; border-radius: 0.6vw; }
+  .player .close { position: absolute; top: 1.6vw; right: 2vw; font: inherit; font-size: 1.2vw; font-weight: 700; color: #fff; background: transparent;
+    border: 1px solid rgba(255,255,255,.4); border-radius: 999px; padding: 0.5vw 1.3vw; cursor: pointer; }
+
   footer { display: flex; justify-content: space-between; align-items: baseline; }
   footer b { font-size: 1.6vw; font-weight: 650; }
   footer small { font-size: 1vw; color: #8A8F96; }
@@ -90,6 +102,7 @@
   <symbol id="claude" viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15.5l-1.8-4.7L5.5 9l4.7-1.3z"/><path d="M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></symbol>
 </svg>
 <main>
+  <button class="watch" id="watch" type="button"><i>▶</i>Watch the 1-minute video</button>
   <div class="switch" role="tablist" aria-label="Show">
     <button data-to="without" role="tab">Without Golden Sandbox</button>
     <button data-to="with" role="tab">With Golden Sandbox</button>
@@ -163,12 +176,24 @@
 
   <footer><b>People stay creative. The company keeps control.</b><span class="right"><a class="with arch-link" href="/architecture">See the architecture →</a><small>Space or ← → to switch</small></span></footer>
 </main>
+<div class="player" id="player" role="dialog" aria-label="Golden Sandbox video">
+  <button class="close" id="close" type="button">Close ✕</button>
+  <video id="vid" src="/video.mp4" controls playsinline preload="none"></video>
+</div>
 <script>
   const set = (m) => { document.body.dataset.mode = m; history.replaceState(null, "", "?" + m); };
   const q = location.search.slice(1);
   if (q === "with" || q === "without") document.body.dataset.mode = q;
   document.querySelectorAll(".switch button").forEach((b) => b.addEventListener("click", () => set(b.dataset.to)));
+  // Video overlay: opens on the button, closes on Esc, the Close button or a click outside the video; the slide keys pause while it's open.
+  const player = document.getElementById("player"), vid = document.getElementById("vid");
+  const openVideo = () => { player.classList.add("open"); vid.currentTime = 0; vid.play().catch(() => {}); };
+  const closeVideo = () => { vid.pause(); player.classList.remove("open"); };
+  document.getElementById("watch").addEventListener("click", openVideo);
+  document.getElementById("close").addEventListener("click", closeVideo);
+  player.addEventListener("click", (e) => { if (e.target === player) closeVideo(); });
   addEventListener("keydown", (e) => {
+    if (player.classList.contains("open")) { if (e.key === "Escape") closeVideo(); return; }
     if (e.key === " " || e.key === "ArrowLeft" || e.key === "ArrowRight") {
       e.preventDefault();
       set(e.key === "ArrowLeft" ? "without" : e.key === "ArrowRight" ? "with" : document.body.dataset.mode === "with" ? "without" : "with");
