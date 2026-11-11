@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Golden Sandbox: who owns the apps</title>
+<style>
+  :root {
+    --text: #15171A; --text-2: #4B5057; --line: #D5D8DC; --soft: #F6F7F8;
+    --green: #007A33; --green-soft: #EEF6F1; --red: #B42318; --red-soft: #FBF1F0;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; background: #fff; color: var(--text);
+    font-family: "Inter Variable", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+  /* One 16:9 slide that scales with the window: 1vw = 1/100 of the width. */
+  main { width: 100vw; min-height: 100vh; padding: 3.2vw 4vw; display: flex; flex-direction: column; gap: 2.2vw; }
+  .problem { border: 1px solid #EBCFCB; border-left: 0.45vw solid var(--red); background: var(--red-soft);
+    border-radius: 0.5vw; padding: 1.8vw 2.4vw; }
+  .problem h1 { font-size: 3.1vw; line-height: 1.15; letter-spacing: -0.02em; font-weight: 750; }
+  .problem ul { list-style: none; padding: 0; display: flex; gap: 3.2vw; margin-top: 1.1vw; }
+  .problem li { font-size: 1.45vw; color: var(--text-2); display: flex; align-items: center; gap: 0.7vw; }
+  .problem li::before { content: ""; width: 0.6vw; height: 0.6vw; border-radius: 50%; background: var(--red); flex: none; }
+  h2 { font-size: 2.6vw; letter-spacing: -0.015em; font-weight: 750; color: var(--green); }
+  .flow { display: flex; align-items: flex-start; gap: 0; }
+  .flow > .box, .flow > .who, .flow > .arrow { margin-top: 3.45vw; height: 17.2vw; }
+  .who { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 0.5vw;
+    width: 8vw; font-size: 1.35vw; font-weight: 650; }
+  .who svg { width: 2.6vw; height: 2.6vw; }
+  .arrow { width: 3vw; display: flex; align-items: center; justify-content: center; color: #8A8F96; flex: none; }
+  .arrow svg { width: 2.2vw; height: 2.2vw; }
+  .box { flex: 1; border: 1px solid var(--line); background: var(--soft); border-radius: 0.6vw;
+    padding: 1.3vw 1.3vw; min-height: 17.2vw; display: flex; flex-direction: column; gap: 0.5vw; min-width: 0; }
+  .box svg { width: 2vw; height: 2vw; color: var(--text); }
+  .box b { font-size: 1.45vw; font-weight: 700; }
+  .box span { font-size: 1.2vw; color: var(--text-2); line-height: 1.35; }
+  .owned { flex: 4.6; display: flex; flex-direction: column; gap: 0.8vw;
+    border: 0.18vw solid var(--green); border-radius: 0.8vw; padding: 1vw 1.1vw 1.1vw; background: #fff; }
+  .owned > .label { font-size: 1.3vw; font-weight: 700; color: var(--green); }
+  .owned .row { display: flex; align-items: stretch; flex: 1; }
+  .admin { display: flex; align-items: center; gap: 0.9vw; border: 1px solid var(--line); border-radius: 0.6vw;
+    padding: 1vw 1.3vw; background: var(--green-soft); font-size: 1.35vw; }
+  .admin svg { width: 1.9vw; height: 1.9vw; color: var(--green); flex: none; }
+  .refused { color: var(--red); font-weight: 650; }
+  footer { margin-top: auto; font-size: 1.6vw; font-weight: 650; color: var(--text); }
+</style>
+</head>
+<body>
+<main>
+  <section class="problem">
+    <h1>Every employee can build an app now. Nobody owns them.</h1>
+    <ul>
+      <li>Scattered across personal accounts</li>
+      <li>No security review</li>
+      <li>No one can switch them off</li>
+    </ul>
+  </section>
+
+  <h2>Golden Sandbox gives the company ownership</h2>
+
+  <div class="flow">
+    <div class="who">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+      Employee
+    </div>
+    <div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M14 6l6 6-6 6"/></svg></div>
+
+    <div class="box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>
+      <b>Claude</b>
+      <span>Asks a few questions, then writes a full spec</span>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M14 6l6 6-6 6"/></svg></div>
+
+    <div class="owned">
+      <div class="label">Owned by the company</div>
+      <div class="row">
+        <div class="box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+          <b>Connector</b>
+          <span>Checks the house rules. <span class="refused">Refuses</span> vague or rule-breaking asks</span>
+        </div>
+        <div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M14 6l6 6-6 6"/></svg></div>
+        <div class="box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5z"/><path d="M3 8v8l9 5 9-5V8M12 13v8"/></svg>
+          <b>Their own sandbox</b>
+          <span>Copied once from the golden sandbox. Builds and tests, holds no keys</span>
+        </div>
+        <div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M14 6l6 6-6 6"/></svg></div>
+        <div class="box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/></svg>
+          <b>Company builder</b>
+          <span>The only thing that can put an app live</span>
+        </div>
+        <div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M14 6l6 6-6 6"/></svg></div>
+        <div class="box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>
+          <b>Live app</b>
+          <span>At a company link, with no access to company systems</span>
+        </div>
+      </div>
+      <div class="admin">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span><b>Admin page</b> sees every app: its owner, status, sandbox time, and every refused request</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>People stay creative. The company keeps control.</footer>
+</main>
+</body>
+</html>
