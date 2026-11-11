@@ -144,6 +144,15 @@ def _public(a) -> dict:
     return d
 
 
+# Left out of the admin page's lists (Marco, arc-eng/hq#782: the demo moved from a gym to a fund). Display only: the
+# entries, their apps and sandboxes stay as they are. Empty this set to show them again.
+HIDDEN_APPS = {"client-package-tracker", "habit-check-in-log"}
+
+
+def _shown(entries):
+    return [a for a in entries if a.app not in HIDDEN_APPS]
+
+
 GOLDEN_URL = "https://github.com/arc-eng/archil-hackathon/tree/main/golden"
 ARCHIL_CONSOLE = "https://console.archil.com"
 
@@ -205,11 +214,11 @@ async def api_admin(req: Request) -> JSONResponse:
         return JSONResponse({"error": "not found"}, status_code=404)
     s = service()
     people: dict[str, dict] = {}
-    for a in s.reg.all():
+    for a in _shown(s.reg.all()):
         p = people.setdefault(a.who.strip().lower(), {"who": a.who, "apps": [], "minutes": 0.0})
         p["apps"].append(_public(a))
         p["minutes"] = round(p["minutes"] + a.build_seconds / 60, 1)
-    refused = [_public(a) for a in s.reg.all() if a.status == "refused"]
+    refused = [_public(a) for a in _shown(s.reg.all()) if a.status == "refused"]
     import golden
 
     latest, waiting = None, []
