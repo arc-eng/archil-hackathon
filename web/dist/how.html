@@ -65,6 +65,16 @@
   .av { width: 3.4vw; height: 3.4vw; border-radius: 50%; object-fit: cover; flex: none; }
   .admin .av { width: 3.8vw; height: 3.8vw; }
 
+  /* Without: Sam and his questions */
+  .sam { margin-top: auto; display: flex; align-items: center; gap: 1.6vw; }
+  .sam img { width: 7vw; height: 7vw; border-radius: 50%; object-fit: cover; flex: none; border: 0.2vw solid var(--red); }
+  .who-name b { display: block; font-size: 2vw; font-weight: 750; } .who-name span { font-size: 1.4vw; color: var(--text-2); }
+  .bubble { position: relative; margin-left: 1.4vw; background: var(--red-soft); border: 0.15vw solid var(--red); border-radius: 1.4vw;
+    padding: 1.3vw 2vw; min-width: 46vw; }
+  .bubble::before { content: ""; position: absolute; left: -1.05vw; top: 50%; width: 1.8vw; height: 1.8vw; background: var(--red-soft);
+    border-left: 0.15vw solid var(--red); border-bottom: 0.15vw solid var(--red); transform: translateY(-50%) rotate(45deg); }
+  #q { display: block; font-size: 2.3vw; font-weight: 700; letter-spacing: -0.01em; transition: opacity .6s ease; }
+
   /* The admin: one line, three marks */
   .admin { margin-top: auto; display: flex; align-items: center; gap: 2vw; border-radius: 0.9vw; padding: 1.3vw 2vw; }
   .without .admin { border: 0.2vw dashed var(--red); }
@@ -114,11 +124,10 @@
       <div class="arrow"><svg><use href="#arrow"/></svg></div>
       <div class="box place"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M4 7l3-3h10l3 3"/></svg><div><b>Personal Dropbox</b><span>leaves when they quit</span></div></div>
     </div>
-    <div class="admin">
-      <div class="who"><img class="av" src="/personas/sam.png" alt="">Sam, admin</div>
-      <span class="mark"><i>?</i>Which apps?</span>
-      <span class="mark"><i>?</i>Whose?</span>
-      <span class="mark"><i>?</i>How to stop one?</span>
+    <div class="sam">
+      <img src="/personas/sam.png" alt="">
+      <div class="who-name"><b>Sam</b><span>owner</span></div>
+      <div class="bubble"><span id="q">Where are all of our tokens going?</span></div>
     </div>
   </section>
 
@@ -174,6 +183,10 @@
       set(e.key === "ArrowLeft" ? "without" : e.key === "ArrowRight" ? "with" : document.body.dataset.mode === "with" ? "without" : "with");
     }
   });
+  const qs = ["Where are all of our tokens going?", "Which apps are running right now?", "Who built the one that emails customers?",
+    "Where is our customer data?", "Whose card is paying for this?", "What happens to Diego's app if he leaves?", "How do I switch that app off?"];
+  let qi = 0; const qel = document.getElementById("q");
+  setInterval(() => { qel.style.opacity = 0; setTimeout(() => { qi = (qi + 1) % qs.length; qel.textContent = qs[qi]; qel.style.opacity = 1; }, 600); }, 3500);
 </script>
 </body>
 </html>
