@@ -341,7 +341,7 @@ def test_pages_serve_the_built_page(client, fx):
 
 def test_architecture_page_serves_the_diagram(client):
     r = client.get("/architecture")
-    assert r.status_code == 200 and "Registry" in r.text
+    assert r.status_code == 200 and "Guard rails" in r.text
 
 
 def test_how_page_serves_the_architecture_slide(client):
