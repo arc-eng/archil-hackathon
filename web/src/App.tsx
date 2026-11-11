@@ -111,6 +111,44 @@ function PublishGolden({ adminKey, latest, pending }: { adminKey: string; latest
   );
 }
 
+// the personas' faces (Marco, hq#782): web/public/personas/personas.json, filled in by the designer; anyone not in
+// it (Marco himself, a new name) gets an initials circle
+type Persona = { name: string; role?: string; face?: string };
+let personasLoad: Promise<Record<string, Persona>> | null = null;
+function usePersonas() {
+  const [map, setMap] = useState<Record<string, Persona>>({});
+  useEffect(() => {
+    personasLoad ??= fetch("/personas/personas.json")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list: Persona[]) => Object.fromEntries((Array.isArray(list) ? list : []).map((p) => [p.name.trim().toLowerCase(), p])))
+      .catch(() => ({}));
+    let alive = true;
+    personasLoad.then((m) => alive && setMap(m));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return map;
+}
+
+function Owner({ who, size = 28 }: { who: string; size?: number }) {
+  const p = usePersonas()[who.trim().toLowerCase()];
+  const [broken, setBroken] = useState(false);
+  const initials = who.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("");
+  return (
+    <span className="inline-flex items-center gap-2">
+      {p?.face && !broken ? (
+        <img src={`/personas/${p.face}`} alt="" width={size} height={size} onError={() => setBroken(true)} className="shrink-0 rounded-full bg-[#E3E5E8] object-cover" style={{ width: size, height: size }} />
+      ) : (
+        <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#E3E5E8] text-xs font-semibold text-[#4B5057]" style={{ width: size, height: size }}>
+          {initials}
+        </span>
+      )}
+      <span>{who}</span>
+    </span>
+  );
+}
+
 const POLL_MS = 5000;
 
 function usePoll<T>(url: string | null): [T | null, string] {
@@ -232,7 +270,7 @@ function AdminView({ adminKey }: { adminKey: string }) {
                       <div className="font-medium">{a.title}</div>
                       {a.status === "failed" && a.reason && <div className="text-[#4B5057] [overflow-wrap:anywhere]">{a.reason}</div>}
                     </TableCell>
-                    <TableCell>{a.who}</TableCell>
+                    <TableCell><Owner who={a.who} /></TableCell>
                     <TableCell><StatusBadge status={a.status} /></TableCell>
                     <TableCell className="text-right tabular-nums">{a.minutes}</TableCell>
                     <TableCell className="text-[#4B5057]">{a.golden ? `v${a.golden}` : "—"}</TableCell>
@@ -361,7 +399,7 @@ function DetailView({ adminKey, id }: { adminKey: string; id: string }) {
               <aside className="flex flex-col gap-6">
                 <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
                   <dt className="text-[#4B5057]">Owner</dt>
-                  <dd>{a.who}</dd>
+                  <dd><Owner who={a.who} size={24} /></dd>
                   <dt className="text-[#4B5057]">Slot</dt>
                   <dd>{a.slot || "—"}</dd>
                   <dt className="text-[#4B5057]">Sandbox minutes</dt>

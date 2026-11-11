@@ -179,6 +179,26 @@ class Service:
             delete_sandbox(who)
         return slots
 
+    def reown(self, ids: list[str], to: str, copy_sandbox=None) -> list[str]:
+        """Move these entries to `to` (a persona for the stage, arc-eng/hq#782): their sandbox is copied to `to`'s name
+        first, so a later change request from `to` finds the code. Nothing moves if any entry is missing or busy, or the
+        copy fails."""
+        to = to.strip()
+        if not to:
+            raise ValueError("say who to move them to")
+        apps = [self.reg.get(i) for i in ids]
+        if not ids or any(a is None for a in apps):
+            raise KeyError(",".join(i for i, a in zip(ids, apps) if a is None) or "no ids")
+        if any(a.status in ("queued", "building", "deploying", "stopping") for a in apps):
+            raise ValueError("one of them has a build or stop running; try again when it's done")
+        sandbox = ""
+        for src in dict.fromkeys(a.sandbox for a in apps if a.sandbox):
+            if copy_sandbox:
+                sandbox = copy_sandbox(src, to)  # raises → nothing moved
+        for a in apps:
+            self.reg.update(a.id, who=to, **({"sandbox": sandbox} if a.sandbox and sandbox else {}))
+        return ids
+
     def remove_entry(self, id_: str) -> None:
         """Drop one finished entry (a replaced version, a test). Live or running ones must be stopped first."""
         a = self.reg.get(id_)

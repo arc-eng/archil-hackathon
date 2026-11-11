@@ -117,6 +117,23 @@ def delete_employee_sandbox(who: str) -> None:
         sb.delete()
 
 
+def copy_sandbox(src_name: str, who: str) -> str:
+    """Give `who` their own sandbox as a copy of `src_name` (re-owning apps to a persona, arc-eng/hq#782). The source is
+    left as it was, and if `who` already has a sandbox nothing is copied. Returns the sandbox name `who` now has."""
+    name = EMP_PREFIX + slug(who)
+    if _by_name(name):
+        return name
+    src = _by_name(src_name)
+    if not src:
+        raise RuntimeError(f"no sandbox named {src_name}")
+    was_running = "running" in _status(src)
+    new = src.fork(name=name)
+    _stop(new)
+    if not was_running:
+        _stop(src)  # forking may wake it; leave it as it was
+    return name
+
+
 def employee_sandbox(who: str):
     """The person's own sandbox, running. First time: a copy of golden."""
     name = EMP_PREFIX + slug(who)
