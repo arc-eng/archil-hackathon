@@ -388,3 +388,15 @@ def test_one_app_record_has_spec_and_versions_behind_the_key(client, fx):
     assert client.get(f"/api/admin/{k}/app/nope").status_code == 404
     assert client.get(f"/admin/{k}/app/{change.id}").status_code == 200
     assert client.get(f"/admin/wrong/app/{change.id}").status_code == 404
+
+
+def test_details_stop_needs_the_key_and_a_live_app(client, fx):
+    e, _ = fx.svc.request("Dana", GOOD)
+    drain(fx.svc)
+    k = connector.admin_key()
+    assert client.post(f"/api/admin/wrong/app/{e.id}/stop").status_code == 404
+    assert client.post(f"/api/admin/{k}/app/nope/stop").status_code == 404
+    assert client.post(f"/api/admin/{k}/app/{e.id}/stop").json() == {"stopping": e.id}
+    drain(fx.svc)
+    assert fx.cleared == ["app-01"] and fx.svc.reg.get(e.id).status == "stopped"
+    assert client.post(f"/api/admin/{k}/app/{e.id}/stop").status_code == 409
