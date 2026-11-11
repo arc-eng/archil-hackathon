@@ -113,7 +113,7 @@ function PublishGolden({ adminKey, latest, pending }: { adminKey: string; latest
 
 // the personas' faces (Marco, hq#782): web/public/personas/personas.json, filled in by the designer; anyone not in
 // it (Marco himself, a new name) gets an initials circle
-type Persona = { name: string; role?: string; face?: string };
+type Persona = { name: string; role?: string; face?: string; admin?: boolean };
 let personasLoad: Promise<Record<string, Persona>> | null = null;
 function usePersonas() {
   const [map, setMap] = useState<Record<string, Persona>>({});
@@ -145,6 +145,18 @@ function Owner({ who, size = 28 }: { who: string; size?: number }) {
         </span>
       )}
       <span>{who}</span>
+    </span>
+  );
+}
+
+// "signed in as" the admin persona, top right (Marco, hq#782, 8:10 pm). Visual only: there is no sign-in behind it
+function SignedIn() {
+  const sam = Object.values(usePersonas()).find((p) => p.admin);
+  if (!sam) return null;
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full border border-[#E3E5E8] py-1 pr-4 pl-1">
+      <Owner who={sam.name} size={32} />
+      {sam.role && <span className="text-sm text-[#4B5057]">{sam.role}</span>}
     </span>
   );
 }
@@ -238,9 +250,12 @@ function AdminView({ adminKey }: { adminKey: string }) {
   return (
     <div className="min-h-screen bg-white text-[#15171A] text-base">
       <div className="mx-auto max-w-7xl px-10 py-10">
-        <div className="mb-6 flex items-baseline gap-4">
-          <h1 className="text-3xl font-semibold">Apps</h1>
-          <span className="text-[#4B5057]">{err ? `⚠ ${err}` : "Updates every 5 s"}</span>
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="flex items-baseline gap-4">
+            <h1 className="text-3xl font-semibold">Apps</h1>
+            <span className="text-[#4B5057]">{err ? `⚠ ${err}` : "Updates every 5 s"}</span>
+          </div>
+          <SignedIn />
         </div>
         {!data ? (
           <p className="text-[#4B5057]">{err || "Loading…"}</p>
@@ -352,17 +367,20 @@ function DetailView({ adminKey, id }: { adminKey: string; id: string }) {
   return (
     <div className="min-h-screen bg-white text-[#15171A] text-base">
       <div className="mx-auto max-w-7xl px-10 py-10">
-        <Breadcrumb>
-          <BreadcrumbList className="text-base">
-            <BreadcrumbItem>
-              <BreadcrumbLink href={`/admin/${adminKey}`}>← All apps</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{a?.title ?? "…"}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <div className="flex items-center justify-between gap-4">
+          <Breadcrumb>
+            <BreadcrumbList className="text-base">
+              <BreadcrumbItem>
+                <BreadcrumbLink href={`/admin/${adminKey}`}>← All apps</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{a?.title ?? "…"}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+          <SignedIn />
+        </div>
         {!a ? (
           <p className="mt-6 text-[#4B5057]">{err || "Loading…"}</p>
         ) : (
