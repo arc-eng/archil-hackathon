@@ -39,7 +39,19 @@ type App = {
   current_url?: string;
 };
 type Person = { who: string; apps: App[]; minutes: number };
-type Admin = { people: Person[]; refused: App[]; golden?: number | null; golden_pending?: string[] };
+type Link = { label: string; url: string };
+type Admin = { people: Person[]; refused: App[]; golden?: number | null; golden_pending?: string[]; links?: Link[] };
+
+// quick-jump buttons into the consoles (Marco, hq#782): each opens in a new tab, in that console's own sign-in
+function JumpButton({ link, full }: { link: Link; full?: boolean }) {
+  return (
+    <Button variant="outline" className={`text-base ${full ? "w-full justify-between" : ""}`} asChild>
+      <a href={link.url} target="_blank" rel="noreferrer">
+        <span className="truncate">{link.label}</span> <ExternalLink className="size-4 shrink-0" />
+      </a>
+    </Button>
+  );
+}
 
 function PublishGolden({ adminKey, latest, pending }: { adminKey: string; latest: number; pending: string[] }) {
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
@@ -201,6 +213,13 @@ function AdminView({ adminKey }: { adminKey: string }) {
           </div>
           {data && data.golden != null && <PublishGolden adminKey={adminKey} latest={data.golden} pending={data.golden_pending ?? []} />}
         </div>
+        {data?.links?.length ? (
+          <div className="mb-8 flex flex-wrap gap-3">
+            {data.links.map((l) => (
+              <JumpButton key={l.label} link={l.label === "Golden image" && data.golden != null ? { ...l, label: `Golden image · v${data.golden}` } : l} />
+            ))}
+          </div>
+        ) : null}
         {!data ? (
           <p className="text-[#4B5057]">{err || "Loading…"}</p>
         ) : (
@@ -290,7 +309,7 @@ function AdminView({ adminKey }: { adminKey: string }) {
   );
 }
 
-type Full = App & { spec: string; versions: App[] };
+type Full = App & { spec: string; versions: App[]; links?: Link[] };
 
 const SPEC_LABELS: [string, string][] = [
   ["What it does and for whom", "What it does, for whom"],
@@ -429,6 +448,14 @@ function DetailView({ adminKey, id }: { adminKey: string; id: string }) {
                   </AlertDialog>
                   {stopErr && <p className="text-[#B42318] [overflow-wrap:anywhere]">{stopErr}</p>}
                 </div>
+                {a.links?.length ? (
+                  <div className="flex flex-col gap-2">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-[#4B5057]">Jump to</h3>
+                    {a.links.map((l) => (
+                      <JumpButton key={l.label} link={l} full />
+                    ))}
+                  </div>
+                ) : null}
                 <div>
                   <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[#4B5057]">History</h3>
                   <ol className="relative flex flex-col gap-5 border-l border-[#E3E5E8] pl-5">

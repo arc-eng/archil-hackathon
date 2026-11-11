@@ -130,8 +130,9 @@ class Service:
                     return
                 self.reg.update(id_, status="deploying", slot=slot)
                 self.reg.step(id_, f"the company's builder is deploying it to {slot}")
-                url = self._deploy(r.source, slot)
-            self.reg.update(id_, status="live", url=url, reason="")
+                res = self._deploy(r.source, slot)
+            url, build = res if isinstance(res, tuple) else (res, "")  # the real deploy also returns the Cloud Build id
+            self.reg.update(id_, status="live", url=url, build=build, reason="")
             self.reg.step(id_, "live")
             for old in self.reg.of(e.who):  # the version this one replaces
                 if old.app == e.app and old.id != id_ and old.status == "live":

@@ -39,6 +39,7 @@ class App:
     steps: list[str] = field(default_factory=list)
     changes: int = 0  # how many times this app was changed after its first build
     golden: int = 0  # the golden version its last build ran on
+    build: str = ""  # Cloud Build id of its last deploy (the details page links to it)
 
 
 class MemoryStore:

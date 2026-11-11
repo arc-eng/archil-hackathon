@@ -22,7 +22,7 @@ class DeployError(Exception):
     pass
 
 
-def _build(source_tgz: str, slot: str, tag: str) -> None:
+def _build(source_tgz: str, slot: str, tag: str) -> str:
     from google.cloud import storage
     from google.cloud.devtools import cloudbuild_v1 as cb
 
@@ -53,23 +53,24 @@ def _build(source_tgz: str, slot: str, tag: str) -> None:
     while time.time() < deadline:
         b = client.get_build(request=cb.GetBuildRequest(name=name, project_id=PROJECT, id=build_id))
         if b.status == cb.Build.Status.SUCCESS:
-            return
+            return build_id
         if b.status in (cb.Build.Status.FAILURE, cb.Build.Status.INTERNAL_ERROR, cb.Build.Status.TIMEOUT, cb.Build.Status.CANCELLED, cb.Build.Status.EXPIRED):
             raise DeployError(f"cloud build {b.status.name.lower()}: {(b.status_detail or '')[:200]} (build {build_id})")
         time.sleep(5)
     raise DeployError(f"cloud build still running after {BUILD_TIMEOUT}s (build {build_id})")
 
 
-def deploy(source_tgz: str, slot: str) -> str:
-    """Build and deploy `source_tgz` (app code + Dockerfile) to Cloud Run service `slot`. Returns its public URL."""
+def deploy(source_tgz: str, slot: str) -> tuple[str, str]:
+    """Build and deploy `source_tgz` (app code + Dockerfile) to Cloud Run service `slot`. Returns its public URL and the
+    Cloud Build id (for the details page's "Last build" link)."""
     tag = f"{slot}-{uuid.uuid4().hex[:8]}"
     try:
-        _build(source_tgz, slot, tag)
+        build_id = _build(source_tgz, slot, tag)
     except DeployError:
         raise
     except Exception as e:  # noqa: BLE001
         raise DeployError(f"{type(e).__name__}: {str(e)[:200]}") from e
-    return URL.format(slot=slot)
+    return URL.format(slot=slot), build_id
 
 
 def clear(slot: str) -> None:
