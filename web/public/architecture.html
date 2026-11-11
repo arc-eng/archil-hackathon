@@ -8,121 +8,66 @@
   html, body { margin: 0; height: 100%; background: #fff; }
   svg { display: block; width: 100vw; height: 100vh; }
   text { font-family: "Inter Variable", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; fill: #15171A; }
-  .h1 { font-size: 52px; font-weight: 800; letter-spacing: -1px; }
-  .sub { font-size: 24px; fill: #4B5057; }
-  .zone { font-size: 30px; font-weight: 800; }
-  .t { font-size: 26px; font-weight: 700; }
-  .s { font-size: 19px; fill: #4B5057; }
-  .lbl { font-size: 19px; font-weight: 650; fill: #15171A; }
-  .n { font-size: 17px; font-weight: 800; fill: #fff; }
-  .box { fill: #fff; stroke: #D5D8DC; stroke-width: 1.5; }
-  .arrow { fill: none; stroke: #15171A; stroke-width: 2.5; marker-end: url(#head); }
-  .thin { fill: none; stroke: #8A8F96; stroke-width: 2; marker-end: url(#headg); }
+  .zone { font-size: 44px; font-weight: 800; letter-spacing: -0.5px; }
+  .t { font-size: 32px; font-weight: 700; }
+  .lbl { font-size: 26px; font-weight: 650; fill: #4B5057; }
+  .fig { font-size: 30px; font-weight: 700; }
+  .box { fill: #fff; stroke: #C9CCD0; stroke-width: 2; }
+  .a { fill: none; stroke: #15171A; stroke-width: 3; marker-end: url(#h); }
+  .a2 { fill: none; stroke: #15171A; stroke-width: 3; marker-end: url(#h); marker-start: url(#h); }
+  .person { fill: none; stroke: #15171A; stroke-width: 3.5; stroke-linecap: round; }
 </style>
 </head>
 <body>
 <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet">
   <defs>
-    <marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#15171A"/></marker>
-    <marker id="headg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#8A8F96"/></marker>
+    <marker id="h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#15171A"/></marker>
   </defs>
 
-  <text x="96" y="100" class="h1">How Golden Sandbox runs</text>
-  <text x="96" y="140" class="sub">Archil holds every sandbox, every golden version and the record of every request.</text>
+  <!-- Employee -->
+  <g class="person" transform="translate(190,250)"><circle cx="0" cy="0" r="28"/><path d="M-50 100c0-40 22-60 50-60s50 20 50 60"/></g>
+  <text x="190" y="400" class="fig" text-anchor="middle">Employee</text>
+  <rect x="70" y="470" width="240" height="110" rx="16" class="box"/>
+  <text x="190" y="537" class="t" text-anchor="middle">Claude</text>
+  <path d="M190 410 V462" class="a"/>
 
-  <!-- EMPLOYEE -->
-  <text x="96" y="262" class="zone" fill="#4B5057" style="fill:#4B5057">Employee</text>
-  <rect x="96" y="380" width="360" height="190" rx="14" class="box"/>
-  <g transform="translate(126,412)" stroke="#15171A" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M12 0l3.6 9.4L25 13l-9.4 3.6L12 26l-3.6-9.4L-1 13l9.4-3.6z"/>
-  </g>
-  <text x="168" y="436" class="t">Claude app</text>
-  <text x="126" y="484" class="s">The app they already use,</text>
-  <text x="126" y="512" class="s">with our connector added.</text>
-  <text x="126" y="540" class="s">Claude writes the spec.</text>
+  <!-- Admin -->
+  <g class="person" transform="translate(190,770)"><circle cx="0" cy="0" r="28"/><path d="M-50 100c0-40 22-60 50-60s50 20 50 60"/></g>
+  <text x="190" y="920" class="fig" text-anchor="middle">Admin</text>
 
-  <!-- ARCHIL (centre) -->
-  <rect x="540" y="220" width="720" height="730" rx="20" fill="#F4F2EC" stroke="#15171A" stroke-width="4"/>
-  <text x="572" y="270" class="zone">Archil</text>
-  <text x="680" y="270" class="s">the ground everything stands on</text>
+  <!-- Archil -->
+  <rect x="440" y="150" width="860" height="860" rx="26" fill="#F4F2EC" stroke="#15171A" stroke-width="5"/>
+  <text x="480" y="215" class="zone">Archil</text>
+  <rect x="520" y="270" width="700" height="120" rx="16" class="box" style="stroke:#15171A;stroke-width:3"/>
+  <text x="870" y="343" class="t" text-anchor="middle">Golden sandbox</text>
+  <path d="M870 390 V478" class="a"/><text x="890" y="445" class="lbl">copied</text>
+  <rect x="520" y="490" width="210" height="120" rx="16" class="box"/>
+  <rect x="765" y="490" width="210" height="120" rx="16" class="box"/>
+  <rect x="1010" y="490" width="210" height="120" rx="16" class="box"/>
+  <text x="625" y="540" class="t" text-anchor="middle" style="font-size:28px">Sandbox</text><text x="625" y="578" class="lbl" text-anchor="middle" style="font-size:22px">employee 1</text>
+  <text x="870" y="540" class="t" text-anchor="middle" style="font-size:28px">Sandbox</text><text x="870" y="578" class="lbl" text-anchor="middle" style="font-size:22px">employee 2</text>
+  <text x="1115" y="540" class="t" text-anchor="middle" style="font-size:28px">Sandbox</text><text x="1115" y="578" class="lbl" text-anchor="middle" style="font-size:22px">employee 3</text>
+  <path d="M870 610 V778" class="a"/><text x="890" y="700" class="lbl">logged</text>
+  <rect x="520" y="790" width="700" height="120" rx="16" class="box" style="stroke:#15171A;stroke-width:3"/>
+  <text x="870" y="863" class="t" text-anchor="middle">Registry</text>
 
-  <rect x="580" y="300" width="640" height="130" rx="14" class="box" style="stroke:#15171A;stroke-width:2"/>
-  <text x="610" y="345" class="t">Golden sandbox</text>
-  <text x="610" y="380" class="s">House rules, template, company skills.</text>
-  <text x="610" y="408" class="s">Published as versions from the admin page.</text>
+  <!-- Our GCP -->
+  <rect x="1440" y="150" width="420" height="860" rx="26" fill="#EEF6F1" stroke="#007A33" stroke-width="4"/>
+  <text x="1480" y="215" class="zone" style="fill:#007A33">Our GCP</text>
+  <rect x="1480" y="270" width="340" height="120" rx="16" class="box"/><text x="1650" y="343" class="t" text-anchor="middle">Connector</text>
+  <rect x="1480" y="470" width="340" height="110" rx="16" class="box"/><text x="1650" y="537" class="t" text-anchor="middle">Builder</text>
+  <rect x="1480" y="650" width="340" height="110" rx="16" class="box"/><text x="1650" y="717" class="t" text-anchor="middle">Apps</text>
+  <rect x="1480" y="790" width="340" height="120" rx="16" class="box"/><text x="1650" y="863" class="t" text-anchor="middle">Admin page</text>
 
-  <path d="M720 430 V492" class="thin"/><path d="M900 430 V492" class="thin"/><path d="M1080 430 V492" class="thin"/>
-  <text x="918" y="462" class="s" style="font-size:17px">copied once,</text>
-  <text x="918" y="482" class="s" style="font-size:17px">synced each request</text>
-
-  <rect x="580" y="500" width="190" height="170" rx="14" class="box"/>
-  <rect x="805" y="500" width="190" height="170" rx="14" class="box"/>
-  <rect x="1030" y="500" width="190" height="170" rx="14" class="box"/>
-  <g class="t">
-    <text x="602" y="545" class="t" style="font-size:22px">Employee A</text>
-    <text x="827" y="545" class="t" style="font-size:22px">Employee B</text>
-    <text x="1052" y="545" class="t" style="font-size:22px">Employee C</text>
-  </g>
-  <text x="602" y="580" class="s">own sandbox</text><text x="827" y="580" class="s">own sandbox</text><text x="1052" y="580" class="s">own sandbox</text>
-  <text x="602" y="620" class="s">Claude Code</text><text x="827" y="620" class="s">Claude Code</text><text x="1052" y="620" class="s">Claude Code</text>
-  <text x="602" y="646" class="s">builds here</text><text x="827" y="646" class="s">builds here</text><text x="1052" y="646" class="s">builds here</text>
-  <text x="580" y="706" class="s" style="font-size:18px">Stopped between requests: every earlier app and its history are still there.</text>
-
-  <path d="M900 718 V778" class="thin"/>
-  <text x="918" y="756" class="s" style="font-size:17px">every request logged</text>
-
-  <rect x="580" y="786" width="640" height="130" rx="14" class="box" style="stroke:#15171A;stroke-width:2"/>
-  <g transform="translate(610,815)" stroke="#15171A" stroke-width="2" fill="none"><ellipse cx="14" cy="6" rx="14" ry="6"/><path d="M0 6v22c0 3.3 6.3 6 14 6s14-2.7 14-6V6"/></g>
-  <text x="656" y="836" class="t">Registry disk</text>
-  <text x="610" y="874" class="s">Every request, spec, status and golden version.</text>
-  <text x="610" y="900" class="s">The admin page reads it.</text>
-
-  <!-- OUR GCP -->
-  <rect x="1360" y="220" width="464" height="730" rx="20" fill="#EEF6F1" stroke="#007A33" stroke-width="3"/>
-  <text x="1392" y="270" class="zone" style="fill:#007A33">Our GCP</text>
-
-  <rect x="1392" y="300" width="400" height="150" rx="14" class="box"/>
-  <text x="1422" y="345" class="t">Connector</text>
-  <text x="1422" y="380" class="s">request_app · my_apps · stop_app</text>
-  <text x="1422" y="408" class="s">Admin and status pages</text>
-  <text x="1422" y="434" class="s" style="font-size:17px">Cloud Run</text>
-
-  <rect x="1392" y="530" width="400" height="130" rx="14" class="box"/>
-  <text x="1422" y="575" class="t">Builder</text>
-  <text x="1422" y="610" class="s">The only account that can deploy</text>
-  <text x="1422" y="638" class="s" style="font-size:17px">Cloud Build</text>
-
-  <rect x="1392" y="760" width="400" height="156" rx="14" class="box"/>
-  <text x="1422" y="805" class="t">Apps</text>
-  <text x="1422" y="840" class="s">app-01 … app-10, one link each</text>
-  <text x="1422" y="868" class="s">No access to anything else</text>
-  <text x="1422" y="896" class="s" style="font-size:17px">Cloud Run</text>
-
-  <!-- FLOW: 1 request, 2 build, 3 code, 4 deploy, 5 link -->
-  <path d="M276 380 V182 H1592 V292" class="arrow"/>
-  <circle cx="900" cy="182" r="16" fill="#15171A"/><text x="900" y="188" class="n" text-anchor="middle">1</text>
-  <text x="924" y="172" class="lbl">request_app(spec)</text>
-
-  <path d="M1392 400 H1300 V520 H1228" class="arrow"/>
-  <circle cx="1300" cy="460" r="16" fill="#15171A"/><text x="1300" y="466" class="n" text-anchor="middle">2</text>
+  <!-- who talks to what -->
+  <path d="M318 525 H380 V105 H1760 V262" class="a2"/><text x="870" y="92" class="lbl" text-anchor="middle">spec · link</text>
+  <path d="M1560 390 V445 H1150 V482" class="a"/><text x="1322" y="432" class="lbl" style="font-size:24px">build</text>
   
-
-  <path d="M1220 640 H1384" class="arrow"/>
-  <circle cx="1300" cy="640" r="16" fill="#15171A"/><text x="1300" y="646" class="n" text-anchor="middle">3</text>
-
-  <path d="M1592 660 V752" class="arrow"/>
-  <circle cx="1592" cy="706" r="16" fill="#15171A"/><text x="1592" y="712" class="n" text-anchor="middle">4</text>
-
-  <path d="M1592 916 V1000 H56 V475 H88" class="arrow"/>
-  <circle cx="900" cy="1000" r="16" fill="#15171A"/><text x="900" y="1006" class="n" text-anchor="middle">5</text>
-  <text x="924" y="1030" class="lbl">the app's link</text>
-
-  <!-- legend for 2 and 3, kept off the lines -->
-  <text x="96" y="660" class="lbl">1  Claude sends the spec</text>
-  <text x="96" y="694" class="lbl">2  Their sandbox starts, Claude Code builds</text>
-  <text x="96" y="728" class="lbl">3  The finished code goes to the builder</text>
-  <text x="96" y="762" class="lbl">4  The builder deploys it</text>
-  <text x="96" y="796" class="lbl">5  The link comes back</text>
+  <path d="M1220 545 H1472" class="a"/>
+  <text x="1322" y="532" class="lbl" style="font-size:24px">code</text>
+  <path d="M1650 580 V642" class="a"/><text x="1668" y="620" class="lbl" style="font-size:24px">deploy</text>
+  <path d="M1480 850 H1228" class="a"/><text x="1322" y="838" class="lbl" style="font-size:24px">reads</text>
+  <path d="M250 850 H380 V1045 H1650 V918" class="a"/><text x="870" y="1036" class="lbl" text-anchor="middle">uses</text>
 </svg>
 </body>
 </html>
