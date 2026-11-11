@@ -529,3 +529,9 @@ def test_admin_api_hides_the_gym_apps_without_touching_them(client, fx, monkeypa
     monkeypatch.setattr(connector, "HIDDEN_APPS", set())
     d = client.get(f"/api/admin/{connector.admin_key()}").json()
     assert sorted(a["app"] for p in d["people"] for a in p["apps"]) == ["deal-flow-tracker", "habit-check-in-log"]
+def test_monitoring_pages_need_the_key_and_a_known_page(client):
+    k = connector.admin_key()
+    for page in ("spend", "usage", "health"):
+        assert client.get(f"/admin/{k}/monitoring/{page}").status_code == 200
+    assert client.get(f"/admin/{k}/monitoring/other").status_code == 404
+    assert client.get("/admin/wrong/monitoring/spend").status_code == 404
