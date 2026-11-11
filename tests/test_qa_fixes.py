@@ -36,6 +36,9 @@ def fake_sb(monkeypatch, tmp_path):
     monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", TOKEN)
     monkeypatch.setattr(builder, "BUILDS_DIR", tmp_path)
     monkeypatch.setattr(builder, "_stop", lambda sb: None)
+    import golden
+
+    monkeypatch.setattr(golden, "_default", golden.Store())
     holder = {}
 
     def make(grep_out):

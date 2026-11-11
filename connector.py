@@ -173,7 +173,30 @@ async def api_admin(req: Request) -> JSONResponse:
         p["apps"].append(_public(a))
         p["minutes"] = round(p["minutes"] + a.build_seconds / 60, 1)
     refused = [_public(a) for a in s.reg.all() if a.status == "refused"]
-    return JSONResponse({"people": list(people.values()), "refused": refused})
+    try:
+        import golden
+
+        latest = golden.default_store().latest()
+    except Exception:  # noqa: BLE001 - the page still works without it
+        latest = None
+    return JSONResponse({"people": list(people.values()), "refused": refused, "golden": latest})
+
+
+@server.custom_route("/api/admin/{key}/publish", methods=["POST"])
+async def api_publish(req: Request) -> JSONResponse:
+    """Publish the golden folder as deployed as the next version (the admin's move). New and existing people get it on
+    their next request."""
+    if req.path_params["key"] != admin_key():
+        return JSONResponse({"error": "not found"}, status_code=404)
+    import asyncio
+
+    import golden
+
+    try:
+        v = await asyncio.to_thread(golden.publish)
+    except Exception as e:  # noqa: BLE001
+        return JSONResponse({"error": str(e)[:300]}, status_code=500)
+    return JSONResponse({"published": v})
 
 
 @server.custom_route("/api/admin/{key}/app/{id}", methods=["GET"])

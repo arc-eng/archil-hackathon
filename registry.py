@@ -38,6 +38,7 @@ class App:
     build_seconds: float = 0.0
     steps: list[str] = field(default_factory=list)
     changes: int = 0  # how many times this app was changed after its first build
+    golden: int = 0  # the golden version its last build ran on
 
 
 class MemoryStore:

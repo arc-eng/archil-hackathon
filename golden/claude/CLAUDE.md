@@ -25,7 +25,9 @@ and where it is silent, pick the simplest choice that meets its "Done when" chec
 6. **Log what you did:** append one line per action to `BUILD_LOG.md` in the app's folder (what and why).
 7. **A change to an existing app** (its folder already has code): edit that app. Keep what works and update
    `SPEC.md`'s history section with the change.
-8. **Reuse:** you may look at the person's other apps in `/home/node/apps/` and reuse their pieces.
+8. **Company skills:** use every skill the company gives you (in your skills folder) wherever it applies, for
+   example the company's brand on every page. They are part of the house rules.
+9. **Reuse:** you may look at the person's other apps in `/home/node/apps/` and reuse their pieces.
 
 ## Never
 
