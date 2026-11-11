@@ -371,6 +371,19 @@ async def how_page(_: Request) -> Response:
     return FileResponse(f) if f.exists() else Response("page not built", status_code=503)
 
 
+@server.custom_route("/video", methods=["GET"])
+async def video_page(_: Request) -> Response:
+    """The happy-path animation for the demo, full screen (arc-eng/hq#782)."""
+    f = WEB / "video.html"
+    return FileResponse(f) if f.exists() else Response("page not built", status_code=503)
+
+
+@server.custom_route("/video.mp4", methods=["GET"])
+async def video_file(_: Request) -> Response:
+    f = WEB / "happy-path.mp4"
+    return FileResponse(f, media_type="video/mp4") if f.exists() else Response("not found", status_code=404)
+
+
 @server.custom_route("/assets/{file}", methods=["GET"])
 async def assets(req: Request) -> Response:
     f = (WEB / "assets" / req.path_params["file"]).resolve()

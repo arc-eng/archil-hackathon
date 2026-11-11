@@ -349,6 +349,13 @@ def test_how_page_serves_the_architecture_slide(client):
     assert r.status_code == 200 and "Nobody owns the apps." in r.text
 
 
+def test_video_page_serves_the_happy_path(client):
+    r = client.get("/video")
+    assert r.status_code == 200 and 'src="/video.mp4"' in r.text
+    v = client.get("/video.mp4", headers={"Range": "bytes=0-99"})
+    assert v.status_code in (200, 206) and v.headers["content-type"] == "video/mp4"
+
+
 def test_bare_address_goes_to_the_slide(client):
     r = client.get("/", follow_redirects=False)
     assert r.status_code == 302 and r.headers["location"] == "/how"
